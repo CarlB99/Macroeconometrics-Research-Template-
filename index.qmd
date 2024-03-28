@@ -1,80 +1,257 @@
 ---
-title: "Title of your work"
-author: "Your Name"
+title: "Bayesian VAR forecast of macroeconomic and financial variables"
+author: "Carl Buan"
 
-execute:
-  echo: false
-  
-bibliography: references.bib
----
-
-> **Abstract.** This is a suggested formatting for your abstract. This **quarto** document is a template for your report. It includes some basic ways of working with such documents. You are invited to learn more about developing online reports with this technology. 
->
-> **Keywords.** bsvars, impulse responses, quarto, R, tax shocks
-
-# Introduction
-
-This is a template repository for the Research Report for **Macroeconometrics**. Learn more about about developing online reports with **quarto** at [quarto.org](https://quarto.org/).
-
-## A Simple Example
-
-This is a Quarto document in which we can cite the **bsvars** package by @wozniakBsvarsBayesianEstimation2022. Look for more info at [package CRAN website](https://cran.r-project.org/package=bsvars).
-
-Simply load the package by running
-```{r package load}
-library(bsvars)
-```
-
-The code below performs simple computations for sampling posterior draws of the impulse responses. The first line uploads the data from the package,another sets the seed for reproducible computations, and then the pipe `|>` is used to streamline the model specification, estimation including the first burn-in run to obtain convergence and finally, the computed impulse responses are saved in object `irf`.
-```{r estimate irf}
-#| message: false
-#| echo: true
-
-data(us_fiscal_lsuw)
-set.seed(123)
-us_fiscal_lsuw |>
-  specify_bsvar$new(p = 1) |>
-  estimate(S = 1000, show_progress = FALSE) |> 
-  estimate(S = 2000, show_progress = FALSE) |> 
-  compute_impulse_responses(horizon = 20) -> irf
-```
-
-The code above is visible as the **R** chunk contains the setting `#| echo: true`.
-
-@tbl-irf reports the posterior means of the gross domestic product response to an unanticipated tax increase by 1 pp.
-```{r}
-#| label: tbl-irf
-#| tbl-cap: Impulse response of gdp to unanticipated tax increase by 1 pp. within two years
-
-irf_gdp_tax = matrix(apply(irf[3,1,1:9,],1, mean), nrow = 1)
-rownames(irf_gdp_tax) = "change in gdp [%]"
-colnames(irf_gdp_tax) = 0:8
-knitr::kable(irf_gdp_tax, digits = 3)
-```
-
-@fig-irf presents the same reaction over the horizon of five years.
-```{r}
-#| label: fig-irf
-#| fig-cap: Impulse response of gdp to unanticipated tax increase by 1 pp. within five years
-
-irf_median    = apply(irf[3,1,,],1, median)
-irf_hdi       = apply(irf[3,1,,],1, HDInterval::hdi, credMass = .68)
-plot(x = 0:20, y = irf_median, type = "l", bty = "n", 
-     xlab = "horizon", ylab = "change in gdp [%]",
-     ylim = range(irf_hdi))
-polygon(x = c(0:20, 20:0), y = c(irf_hdi[1,], irf_hdi[2,21:1]), col = "deepskyblue1", border = "deepskyblue1")
-lines(x = 0:20, y = irf_median, lwd = 2, col = "deepskyblue3")
-```
-
-## Some Hints
-
-Have a look at how to work with **RStudio** and **GitHub** at: [How to use git and GitHub with R](https://rfortherestofus.com/2021/02/how-to-use-git-github-with-r/). 
-
-These are many different ways of how to work with references in **RStudio**: [Preview Citations](https://posit.co/blog/rstudio-1-4-preview-citations/).
-
-To make all the **R** code visible on the website change the settings in the preabmble of this document to:
-```
 execute:
   echo: true
+
+# format:
+#   pdf:
+#     fontfamily: cmbright
+#     geometry: margin=1.5cm
+format:
+  html:
+    toc: true
+    toc-location: left
+---
+
+> **Abstract**
+
+# Research question
+Past financial crises such as in 2008 have shown the severe impact that financial conditions can have on the real economy with crashes followed by increasing unemployment and decreased economic activity. This research project's aim to analyze the forecasting performance of macroeconomic variables by including financial variables.
+ 
+Thus the research question can be stated as: Will including financial variables improve the forecasting performance of the real economy?
+
+## Motivation
+
+Traditional macroeconomic modelling often exclude financial markets, as the effects from the financial nominal variables on real variables are deemed insignificant per the classical dichotomy in macroeconomics. However, as earlier studies have shown and the descriptive analysis following this will illustrate, changes in the financial sector can spill over to economic activity. Therefore, it could help explaining the real economy, which could translate to improved forecasting performance.
+
+As both monetary and fiscal policy is not only based on current economic conditions but also expectations regarding the future, it is essential to be able to generate accurate predictions of economic activity and inflation in the future. 
+
+# Data and its properties
+
+## Descriptive analysis
+The four variables are visualized in @fig-tsplots, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation seems to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.
+
+```{r package load}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: hide
+
+  
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ecb)
+library(gridExtra)
+library(tseries)
+library(bsvars)
+
 ```
+
+```{r Downloading and readying data}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: hide
+
+
+rm(list = ls())
+
+# Downloading Data
+start_date_m <- "2003-01" 
+end_date_m <- "2023-12"
+
+
+HICP <- get_data("ICP.M.U2.Y.000000.3.INX", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
+  transmute(obstime, hicp = obsvalue)
+
+CISS <- get_data("CISS.M.U2.Z0Z.4F.EC.SOV_EW.IDX", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
+  transmute(obstime, ciss = obsvalue)
+
+IP <- get_data("STS.M.I8.Y.PROD.NS0010.4.000", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
+  transmute(obstime, ip = obsvalue)
+
+UN <- get_data("LFSI.M.I9.S.UNEHRT.TOTAL0.15_74.T", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
+  transmute(obstime, un = obsvalue)
+
+Data <- HICP |>
+  left_join(IP, by = "obstime") |>
+  left_join(CISS, by = "obstime", suffix = c(".HICP", ".CISS")) |>
+  left_join(UN, by = "obstime", suffix = c("", ".UN"))
+
+Data <- Data |>
+  mutate(across(-c(1, 4), ~log(.)))
+
+Data <- Data |> 
+  mutate(obstime = as.Date(paste0(obstime, "-01")))
+
+```
+
+```{r Plotting data}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: hide
+
+
+# Plotting the variables
+p1 <- ggplot(Data, aes(x = obstime, y = hicp)) +
+  geom_line() +
+  labs(x = "", y = "HICP", title = "Inflation") +
+  theme_bw() +
+  theme(
+    panel.border = element_rect(colour = "black", fill=NA),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    plot.background = element_blank(),  
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+p1 <- ggplot(Data, aes(x = obstime, y = hicp)) +
+  geom_line() +
+  labs(x = "", y = "hicp", title = "Inflation") +
+  theme_bw() +
+  theme(
+    panel.border = element_rect(colour = "black", fill=NA),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    plot.background = element_blank(),  
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+p2 <- ggplot(Data, aes(x = obstime, y = ip)) +
+  geom_line() +
+  labs(x = "", y = "ip", title = "Industrial production") +
+  theme_bw() +
+  theme(
+    panel.border = element_rect(colour = "black", fill=NA),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    plot.background = element_blank(),  
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+p3 <- ggplot(Data, aes(x = obstime, y = ciss)) +
+  geom_line() +
+  labs(x = "", y = "ciss", title = "Financial Stress") +
+  theme_bw() +
+  theme(
+    panel.border = element_rect(colour = "black", fill=NA),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    plot.background = element_blank(),  
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+p4 <- ggplot(Data, aes(x = obstime, y = un)) +
+  geom_line() +
+  labs(x = "", y = "un", title = "Unemployment") +
+  theme_bw() +
+  theme(
+    panel.border = element_rect(colour = "black", fill=NA),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    plot.background = element_blank(),  
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+```
+
+```{r Plotting the variables}
+#| echo: false
+#| message: false
+#| warning: false
+#| label: fig-tsplots
+#| fig-cap: Plots of time series
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+## Autocorrelation in the variables
+
+Additionally, I check for autocorrelation in the time series in @fig-acf and @fig-pacf, where there is clearly a high degree of memory in the variables.
+
+```{r ACF and PACF}
+#| echo: false
+#| message: false
+#| warning: false
+#| label: fig-acf
+#| fig-cap: Autocorrelation plots for the variables
+Data <- as.ts(Data)
+
+par(mfrow = c(2, 2))
+
+acf(Data[,1], main = "ACF for HICP")
+acf(Data[,2], main = "ACF for IP")
+acf(Data[,3], main = "ACF for CISS")
+acf(Data[,4], main = "ACF for UN")
+
+```
+
+```{r PACF}
+#| echo: false
+#| message: false
+#| warning: false
+#| label: fig-pacf
+#| fig-cap: Partical autocorrelation plots for the variables
+
+par(mfrow = c(2, 2))
+
+pacf(Data[,1], main = "PACF for HICP")
+pacf(Data[,2], main = "PACF for IP")
+pacf(Data[,3], main = "PACF for CISS")
+pacf(Data[,4], main = "PACF for UN")
+
+```
+
+
+## Unit root tests ##
+To test for the timeseries being stationary, I apply an Augmented Dickey Fuller (ADF) test, by using the **adf()**, which tests for the presence an unit root in the time series with the chosen lag of 12 periods, since the data is monthly. @tbl-adf reports the test statistics for the ADF tests:
+```{r ADF tests}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: hide
+
+
+# ADF Test
+
+adf_hicp <- adf.test(Data[,1], k=12, alternative = "stationary")
+adf_ip <- adf.test(Data[,2], k=12, alternative = "stationary")
+adf_ciss <- adf.test(Data[,3], k=12, alternative = "stationary")
+adf_un <- adf.test(Data[,4], k=12, alternative = "stationary")
+
+adf_results <- data.frame(
+  Variable = c("HICP", "IP", "CISS", "UN"),
+  ADF_Statistic = c(adf_hicp$statistic, adf_ip$statistic, adf_ciss$statistic, adf_un$statistic),
+  P_Value = c(adf_hicp$p.value, adf_ip$p.value, adf_ciss$p.value, adf_un$p.value),
+  lags = rep(12, 4)
+)
+
+```
+
+```{r}
+#| label: tbl-adf
+#| tbl-cap: ADF tests' statistics with the null hypothesis being a unit root
+#| echo: false
+
+knitr::kable(adf_results, digits = 3, align = 'c')
+```
+Only for inflation can I reject the possibility of an unit root being present at the 5 pct. confidence interval.
+
+# The model
+To analyze the macroeconomic and financial variables and run forecasts, a vector autoregression (VAR) model can be applied, which allows for the multivariate framework of several timeseries. 
+A general VAR model with $\rho$ lags for $t=1,...,T$ can be stated as:
+
+\begin{gather}
+y_{t}	=\mu_{0}+A_{1}y_{t-1}+...+A_{\rho}y_{t-\rho}+\epsilon_{t}
+\epsilon_{t}|Y_{T-1}	\sim iid\left(0_{N},\Sigma\right)
+\end{gather}
+
+Where $y_{t}=N\times1$ is a vector of observations at time $t$, $\mu_{0}=N\times1$ is a vector of constant terms, $A_{i}=N\times N$ is a vector of the autoregressive slope parameters, $\epsilon_{t}=N\times1$ is a vector of error terms, $Y_{t-1}$ is the information set and $\Sigma=N\times N$ is the covariance matrix of the error term.
+
+## Bayesian VAR Forecasting
+
 ## References {.unnumbered}

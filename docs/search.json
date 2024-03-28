@@ -2,22 +2,50 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "Title of your work",
+    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
     "section": "",
-    "text": "Abstract. This is a suggested formatting for your abstract. This quarto document is a template for your report. It includes some basic ways of working with such documents. You are invited to learn more about developing online reports with this technology.\nKeywords. bsvars, impulse responses, quarto, R, tax shocks"
+    "text": "Abstract"
   },
   {
-    "objectID": "index.html#a-simple-example",
-    "href": "index.html#a-simple-example",
-    "title": "Title of your work",
-    "section": "A Simple Example",
-    "text": "A Simple Example\nThis is a Quarto document in which we can cite the bsvars package by Woźniak (2022). Look for more info at package CRAN website.\nSimply load the package by running\n\n\n\nThe code below performs simple computations for sampling posterior draws of the impulse responses. The first line uploads the data from the package,another sets the seed for reproducible computations, and then the pipe |> is used to streamline the model specification, estimation including the first burn-in run to obtain convergence and finally, the computed impulse responses are saved in object irf.\n\ndata(us_fiscal_lsuw)\nset.seed(123)\nus_fiscal_lsuw |>\n  specify_bsvar$new(p = 1) |>\n  estimate(S = 1000, show_progress = FALSE) |> \n  estimate(S = 2000, show_progress = FALSE) |> \n  compute_impulse_responses(horizon = 20) -> irf\n\nThe code above is visible as the R chunk contains the setting #| echo: true.\nTable 1 reports the posterior means of the gross domestic product response to an unanticipated tax increase by 1 pp.\n\n\n\n\nTable 1: Impulse response of gdp to unanticipated tax increase by 1 pp. within two years\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n0\n1\n2\n3\n4\n5\n6\n7\n8\n\n\n\n\nchange in gdp [%]\n0.199\n0.184\n0.17\n0.159\n0.148\n0.139\n0.13\n0.123\n0.116\n\n\n\n\n\n\nFigure 1 presents the same reaction over the horizon of five years.\n\n\n\n\n\nFigure 1: Impulse response of gdp to unanticipated tax increase by 1 pp. within five years"
+    "objectID": "index.html#motivation",
+    "href": "index.html#motivation",
+    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "section": "Motivation",
+    "text": "Motivation\nTraditional macroeconomic modelling often exclude financial markets, as the effects from the financial nominal variables on real variables are deemed insignificant per the classical dichotomy in macroeconomics. However, as earlier studies have shown and the descriptive analysis following this will illustrate, changes in the financial sector can spill over to economic activity. Therefore, it could help explaining the real economy, which could translate to improved forecasting performance.\nAs both monetary and fiscal policy is not only based on current economic conditions but also expectations regarding the future, it is essential to be able to generate accurate predictions of economic activity and inflation in the future."
   },
   {
-    "objectID": "index.html#some-hints",
-    "href": "index.html#some-hints",
-    "title": "Title of your work",
-    "section": "Some Hints",
-    "text": "Some Hints\nHave a look at how to work with RStudio and GitHub at: How to use git and GitHub with R.\nThese are many different ways of how to work with references in RStudio: Preview Citations.\nTo make all the R code visible on the website change the settings in the preabmble of this document to:\nexecute:\n  echo: true"
+    "objectID": "index.html#descriptive-analysis",
+    "href": "index.html#descriptive-analysis",
+    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "section": "Descriptive analysis",
+    "text": "Descriptive analysis\nThe four variables are visualized in Figure 1, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation seems to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.\n\n\n\n\n\nFigure 1: Plots of time series"
+  },
+  {
+    "objectID": "index.html#autocorrelation-in-the-variables",
+    "href": "index.html#autocorrelation-in-the-variables",
+    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "section": "Autocorrelation in the variables",
+    "text": "Autocorrelation in the variables\nAdditionally, I check for autocorrelation in the time series in Figure 2 and Figure 3, where there is clearly a high degree of memory in the variables.\n\n\n\n\n\nFigure 2: Autocorrelation plots for the variables\n\n\n\n\n\n\n\n\n\nFigure 3: Partical autocorrelation plots for the variables"
+  },
+  {
+    "objectID": "index.html#unit-root-tests",
+    "href": "index.html#unit-root-tests",
+    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "section": "Unit root tests",
+    "text": "Unit root tests\nTo test for the timeseries being stationary, I apply an Augmented Dickey Fuller (ADF) test, by using the adf(), which tests for the presence an unit root in the time series with the chosen lag of 12 periods, since the data is monthly. Table 1 reports the test statistics for the ADF tests:\n\n\n\n\nTable 1: ADF tests’ statistics with the null hypothesis being a unit root\n\n\nVariable\nADF_Statistic\nP_Value\nlags\n\n\n\n\nHICP\n-5.537\n0.010\n12\n\n\nIP\n-2.942\n0.179\n12\n\n\nCISS\n-2.691\n0.285\n12\n\n\nUN\n-2.260\n0.466\n12\n\n\n\n\n\n\nOnly for inflation can I reject the possibility of an unit root being present at the 5 pct. confidence interval."
+  },
+  {
+    "objectID": "index.html#bayesian-var-forecasting",
+    "href": "index.html#bayesian-var-forecasting",
+    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "section": "Bayesian VAR Forecasting",
+    "text": "Bayesian VAR Forecasting"
+  },
+  {
+    "objectID": "index.html#references",
+    "href": "index.html#references",
+    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "section": "References",
+    "text": "References"
   }
 ]
