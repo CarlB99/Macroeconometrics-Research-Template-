@@ -38,9 +38,11 @@ To model the economic activity in the euro area, I use the Industrial Production
 
 The price level in the euro area is included as the Harmonized Index of Consumer Prices (HICP), which measures the price level and inflation across the euro area. Including the price level is important, as it is a major concern for policy makers and it will affect the economic activity and be affected by financial conditions.
 
-Additionally, I include unemployment in the euro area, as it is both an indicator of economic activity and current expectations to the future.
+Additionally, I include unemployment in the euro area, as it is both an indicator of economic activity and current expectations to the future. Hence, unemployment serves as an important variable to include when modelling the economy.
 
 Finally I chose to include financial stress, which is measured by composite indicator variable for systemic stress (CISS) in the euro area, as financial conditions and markets highly affects the economic activity, inflation and unemployment.
+
+The used time series are collected from the ECB's data warehouse with the chosen time period 01.01.2003 to 2023.12.01. I use the package *ecb()* to collect the data.
 
 ## Descriptive analysis
 The four variables are visualized in @fig-tsplots, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation seems to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.
@@ -251,7 +253,7 @@ y_{t}	=\mu_{0}+A_{1}y_{t-1}+...+A_{\rho}y_{t-\rho}+\epsilon_{t}
 \epsilon_{t}|Y_{T-1}	\sim iid\left(0_{N},\Sigma\right)
 \end{gather}
 
-Where $y_{t}=N\times1$ is a vector of observations at time $t$, $\mu_{0}=N\times1$ is a vector of constant terms, $A_{i}=N\times N$ is a vector of the autoregressive slope parameters, $\epsilon_{t}=N\times1$ is a vector of error terms, $Y_{t-1}$ is the information set and $\Sigma=N\times N$ is the covariance matrix of the error term.
+Where $y_{t}=N\times1$ is a vector of observations at time $t$, $\mu_{0}=N\times1$ is a vector of constant terms, $A_{i}=N\times N$ is a vector of the autoregressive slope parameters, $\epsilon_{t}=N\times1$ is a vector of error terms, $Y_{t-1}$ is the information set and $\Sigma=N\times N$ is the covariance matrix of the error term.    
 
 ## Bayesian VAR Forecasting
 
