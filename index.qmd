@@ -114,7 +114,7 @@ Data <- Data |>
 
 p1 <- ggplot(Data, aes(x = obstime, y = hicp)) +
   geom_line() +
-  labs(x = "", y = "HICP", title = "Inflation") +
+  labs(x = "", y = "LOG(HICP)", title = "Inflation") +
   theme_bw() +
   theme(
     panel.border = element_rect(colour = "black", fill=NA),  
@@ -126,7 +126,7 @@ p1 <- ggplot(Data, aes(x = obstime, y = hicp)) +
 
 p2 <- ggplot(Data, aes(x = obstime, y = ip)) +
   geom_line() +
-  labs(x = "", y = "IP", title = "Industrial production") +
+  labs(x = "", y = "LOG(IP)", title = "Industrial production") +
   theme_bw() +
   theme(
     panel.border = element_rect(colour = "black", fill=NA),  
