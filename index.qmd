@@ -36,7 +36,7 @@ The economic variables used in this analysis are then (Note that this will be ex
 
 To model the economic activity in the euro area, I use the Industrial Production as proxy for the movements in the Gross Domestic Product (GDP). If I instead opted to use GDP as a variable directly, I would have been required to apply temporal disaggregation, as GDP is tracked quarterly.
 
-The price level in the euro area is included as the Harmonized Index of Consumer Prices (HICP), which measures the price level and inflation across the euro area. Including the price level is important, as it is a major concern for policy makers and it will affect the economic activity and be affected by financial conditions. The base year of the HICP is 2015. 
+The price level in the euro area is included as the Harmonized Index of Consumer Prices (HICP), which measures the price level and inflation across the euro area. Including the price level is important, as it is a major concern for policy makers and it will affect the economic activity and be affected by financial conditions. The base year of the HICP is 2015.
 
 Additionally, I include unemployment in the euro area, as it is both an indicator of economic activity and current expectations to the future. Hence, unemployment serves as an important variable to include when modelling the economy.
 
@@ -96,7 +96,7 @@ Data <- HICP |>
   left_join(UN, by = "obstime", suffix = c("", ".UN"))
 
 Data <- Data |>
-  mutate(across(-c(1, 4), ~log(.)))
+  mutate(across(c(2,3), ~log(.)))
 
 Data <- Data |> 
   mutate(obstime = as.Date(paste0(obstime, "-01")))
