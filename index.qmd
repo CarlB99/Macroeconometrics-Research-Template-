@@ -1,5 +1,5 @@
 ---
-title: "Bayesian VAR forecast of macroeconomic and financial variables"
+title: "Bayesian VAR Forecast of Macroeconomic and Financial Variables"
 author: "Carl Buan"
 
 execute:
