@@ -2,49 +2,49 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "title": "Bayesian VAR Forecast of Macroeconomic and Financial Variables",
     "section": "",
     "text": "Abstract"
   },
   {
     "objectID": "index.html#motivation",
     "href": "index.html#motivation",
-    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "title": "Bayesian VAR Forecast of Macroeconomic and Financial Variables",
     "section": "Motivation",
     "text": "Motivation\nTraditional macroeconomic modelling often exclude financial markets, as the effects from the financial nominal variables on real variables are deemed insignificant per the classical dichotomy in macroeconomics. However, as earlier studies have shown and the descriptive analysis following this will illustrate, changes in the financial sector can spill over to economic activity. Therefore, it could help explaining the real economy, which could translate to improved forecasting performance.\nAs both monetary and fiscal policy is not only based on current economic conditions but also expectations regarding the future, it is essential to be able to generate accurate predictions of economic activity and inflation in the future."
   },
   {
     "objectID": "index.html#descriptive-analysis",
     "href": "index.html#descriptive-analysis",
-    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "title": "Bayesian VAR Forecast of Macroeconomic and Financial Variables",
     "section": "Descriptive analysis",
     "text": "Descriptive analysis\nThe four variables are visualized in Figure 1, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation seems to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.\n\n\n\n\n\nFigure 1: Plots of time series"
   },
   {
     "objectID": "index.html#autocorrelation-in-the-variables",
     "href": "index.html#autocorrelation-in-the-variables",
-    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "title": "Bayesian VAR Forecast of Macroeconomic and Financial Variables",
     "section": "Autocorrelation in the variables",
     "text": "Autocorrelation in the variables\nAdditionally, I check for autocorrelation in the time series in Figure 2 and Figure 3, where there is clearly a high degree of memory in the variables.\n\n\n\n\n\nFigure 2: Autocorrelation plots for the variables\n\n\n\n\n\n\n\n\n\nFigure 3: Partical autocorrelation plots for the variables"
   },
   {
     "objectID": "index.html#unit-root-tests",
     "href": "index.html#unit-root-tests",
-    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "title": "Bayesian VAR Forecast of Macroeconomic and Financial Variables",
     "section": "Unit root tests",
-    "text": "Unit root tests\nTo test for the timeseries being stationary, I apply an Augmented Dickey Fuller (ADF) test, by using the adf(), which tests for the presence an unit root in the time series with the chosen lag of 12 periods, since the data is monthly. Table 1 reports the test statistics for the ADF tests:\n\n\n\n\nTable 1: ADF tests’ statistics with the null hypothesis being a unit root\n\n\nVariable\nADF_Statistic\nP_Value\nlags\n\n\n\n\nHICP\n-5.537\n0.010\n12\n\n\nIP\n-2.942\n0.179\n12\n\n\nCISS\n-2.691\n0.285\n12\n\n\nUN\n-2.260\n0.466\n12\n\n\n\n\n\n\nOnly for inflation can I reject the possibility of an unit root being present at the 5 pct. confidence interval."
+    "text": "Unit root tests\nTo test for the timeseries being stationary, I apply an Augmented Dickey Fuller (ADF) test, by using the adf(), which tests for the presence an unit root in the time series with the chosen lag of 12 periods, since the data is monthly. Table 1 reports the test statistics for the ADF tests:\n\n\n\n\nTable 1: ADF tests’ statistics with the null hypothesis being a unit root\n\n\nVariable\nADF_Statistic\nP_Value\nlags\n\n\n\n\nHICP\n-5.537\n0.010\n12\n\n\nIP\n-2.954\n0.174\n12\n\n\nCISS\n-2.691\n0.285\n12\n\n\nUN\n-2.260\n0.466\n12\n\n\n\n\n\n\nOnly for inflation can I reject the possibility of an unit root being present at the 5 pct. confidence interval."
   },
   {
     "objectID": "index.html#bayesian-var-forecasting",
     "href": "index.html#bayesian-var-forecasting",
-    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "title": "Bayesian VAR Forecast of Macroeconomic and Financial Variables",
     "section": "Bayesian VAR Forecasting",
     "text": "Bayesian VAR Forecasting"
   },
   {
     "objectID": "index.html#references",
     "href": "index.html#references",
-    "title": "Bayesian VAR forecast of macroeconomic and financial variables",
+    "title": "Bayesian VAR Forecast of Macroeconomic and Financial Variables",
     "section": "References",
     "text": "References"
   }

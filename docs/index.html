@@ -8,7 +8,7 @@
 
 <meta name="author" content="Carl Buan">
 
-<title>Macroeconometrics Research Report - Bayesian VAR forecast of macroeconomic and financial variables</title>
+<title>Macroeconometrics Research Report - Bayesian VAR Forecast of Macroeconomic and Financial Variables</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -119,7 +119,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Bayesian VAR forecast of macroeconomic and financial variables</h1>
+<h1 class="title">Bayesian VAR Forecast of Macroeconomic and Financial Variables</h1>
 </div>
 
 
@@ -158,7 +158,7 @@ ul.task-list li input[type="checkbox"] {
 <p>My choice of variables is somewhat inspired by papers like Peersman et. al (2017), who perform SVAR analyses of the ECB’s monetary policy, however, I am instead interested in examining the forecasting ability of macroeconomic variables combined with financial for the euro area. As forecasts are often short-term forecasts of the immediate future, data frequency has to be high, hence all data used in this analysis is monthly.</p>
 <p>The economic variables used in this analysis are then (Note that this will be expanded to include several other macroeconomic variables reflecting the economy):</p>
 <p>To model the economic activity in the euro area, I use the Industrial Production as proxy for the movements in the Gross Domestic Product (GDP). If I instead opted to use GDP as a variable directly, I would have been required to apply temporal disaggregation, as GDP is tracked quarterly.</p>
-<p>The price level in the euro area is included as the Harmonized Index of Consumer Prices (HICP), which measures the price level and inflation across the euro area. Including the price level is important, as it is a major concern for policy makers and it will affect the economic activity and be affected by financial conditions.</p>
+<p>The price level in the euro area is included as the Harmonized Index of Consumer Prices (HICP), which measures the price level and inflation across the euro area. Including the price level is important, as it is a major concern for policy makers and it will affect the economic activity and be affected by financial conditions. The base year of the HICP is 2015.</p>
 <p>Additionally, I include unemployment in the euro area, as it is both an indicator of economic activity and current expectations to the future. Hence, unemployment serves as an important variable to include when modelling the economy.</p>
 <p>Finally I chose to include financial stress, which is measured by composite indicator variable for systemic stress (CISS) in the euro area, as financial conditions and markets highly affects the economic activity, inflation and unemployment.</p>
 <p>The used time series are collected from the ECB’s data warehouse with the chosen time period 01.01.2003 to 2023.12.01. I use the package <em>ecb()</em> to collect the data.</p>
@@ -225,8 +225,8 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="even">
 <td style="text-align: center;">IP</td>
-<td style="text-align: center;">-2.942</td>
-<td style="text-align: center;">0.179</td>
+<td style="text-align: center;">-2.954</td>
+<td style="text-align: center;">0.174</td>
 <td style="text-align: center;">12</td>
 </tr>
 <tr class="odd">
