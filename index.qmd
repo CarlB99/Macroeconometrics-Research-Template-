@@ -42,7 +42,7 @@ Additionally, I include unemployment in the euro area, as it is both an indicato
 
 Finally I chose to include financial stress, which is measured by composite indicator variable for systemic stress (CISS) in the euro area, as financial conditions and markets highly affects the economic activity, inflation and unemployment.
 
-The used time series are collected from the ECB's data warehouse with the chosen time period 01.01.2003 to 2023.12.01. I use the package *ecb()* to collect the data.
+The used time series are collected from the ECB's data warehouse with the chosen time period 01.01.2003 to 2023.12.01. I use the package **ecb** to collect the data.
 
 ## Descriptive analysis
 The four variables are visualized in @fig-tsplots, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation seems to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.
