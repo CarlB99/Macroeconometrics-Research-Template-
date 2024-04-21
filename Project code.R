@@ -3,8 +3,9 @@ library(tidyr)
 library(ggplot2)
 library(ecb)
 library(gridExtra)
-library(tseries)
 library(bsvars)
+library(lubridate)
+library(tseries)
 
 rm(list = ls())
 
@@ -12,141 +13,113 @@ rm(list = ls())
 start_date_m <- "2003-01" 
 end_date_m <- "2023-12"
 
+# Define the datasets
+series_info <- list(
+  hicp = "ICP.M.U2.Y.000000.3.INX",
+  ciss = "CISS.M.U2.Z0Z.4F.EC.SOV_EW.IDX",
+  ip = "STS.M.I8.Y.PROD.NS0010.4.000",
+  un = "LFSI.M.I9.S.UNEHRT.TOTAL0.15_74.T",
+  m1 = "BSI.M.U2.Y.V.M10.X.1.U2.2300.Z01.E"
+)
 
-HICP <- get_data("ICP.M.U2.Y.000000.3.INX", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
-  transmute(obstime, hicp = obsvalue)
+# Making function to collect data
+prepare_data <- function(series_id, name, start_date, end_date) {
+  get_data(series_id, filter = list(startPeriod = start_date, endPeriod = end_date)) |>
+    transmute(obstime, !!name := obsvalue)
+}
 
-CISS <- get_data("CISS.M.U2.Z0Z.4F.EC.SOV_EW.IDX", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
-  transmute(obstime, ciss = obsvalue)
+# Collecting data
+datasets <- lapply(names(series_info), function(name) {
+  prepare_data(series_info[[name]], name, start_date_m, end_date_m)
+})
 
-IP <- get_data("STS.M.I8.Y.PROD.NS0010.4.000", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
-  transmute(obstime, ip = obsvalue)
-
-UN <- get_data("LFSI.M.I9.S.UNEHRT.TOTAL0.15_74.T", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
-  transmute(obstime, un = obsvalue)
-
-Data <- HICP |>
-  left_join(IP, by = "obstime") |>
-  left_join(CISS, by = "obstime", suffix = c(".HICP", ".CISS")) |>
-  left_join(UN, by = "obstime", suffix = c("", ".UN"))
+# Merge all datasets by 'obstime'
+Data <- Reduce(function(x, y) left_join(x, y, by = "obstime"), datasets)
 
 Data <- Data |>
-  mutate(across(-c(1, 4), ~log(.)))
+  mutate(across(c(2, 4, 6), ~log(.)))
 
-Data <- Data |> 
-  mutate(obstime = as.Date(paste0(obstime, "-01")))
+# Convert 'obstime' to Date format
+Data$obstime <- as.Date(paste0(Data$obstime, "-01"))
 
+# Define the plot configurations
+plot_settings <- list(
+  list(name = "hicp", title = "Inflation", ylab = "LOG(HICP)"),
+  list(name = "ip", title = "Industrial production", ylab = "LOG(IP)"),
+  list(name = "ciss", title = "Financial Stress", ylab = "CISS"),
+  list(name = "un", title = "Unemployment", ylab = "UN"),
+  list(name = "m1", title = "M1 - Money Stock", ylab = "M1")
+)
 
-# Plotting the variables
-p1 <- ggplot(Data, aes(x = obstime, y = hicp)) +
-  geom_line() +
-  labs(x = "", y = "HICP", title = "Inflation") +
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour = "black", fill=NA),  
-    panel.grid.major = element_blank(),  
-    panel.grid.minor = element_blank(),  
-    plot.background = element_blank(),  
-    plot.title = element_text(hjust = 0.5)  
-  )
+# Create the plots
+plots <- lapply(plot_settings, function(setting) {
+  ggplot(Data, aes_string(x = "obstime", y = setting$name)) +
+    geom_line() +
+    labs(x = "", y = setting$ylab, title = setting$title) +
+    theme_bw() +
+    theme(
+      panel.border = element_rect(colour = "black", fill=NA),  
+      panel.grid.major = element_blank(),  
+      panel.grid.minor = element_blank(),  
+      plot.background = element_blank(),  
+      plot.title = element_text(hjust = 0.5)  
+    )
+})
 
-p1 <- ggplot(Data, aes(x = obstime, y = hicp)) +
-  geom_line() +
-  labs(x = "", y = "hicp", title = "Inflation") +
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour = "black", fill=NA),  
-    panel.grid.major = element_blank(),  
-    panel.grid.minor = element_blank(),  
-    plot.background = element_blank(),  
-    plot.title = element_text(hjust = 0.5)  
-  )
+# Arrange all plots in a grid
+grid.arrange(grobs = plots, ncol = 2)
 
-p2 <- ggplot(Data, aes(x = obstime, y = ip)) +
-  geom_line() +
-  labs(x = "", y = "ip", title = "Industrial production") +
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour = "black", fill=NA),  
-    panel.grid.major = element_blank(),  
-    panel.grid.minor = element_blank(),  
-    plot.background = element_blank(),  
-    plot.title = element_text(hjust = 0.5)  
-  )
-
-p3 <- ggplot(Data, aes(x = obstime, y = ciss)) +
-  geom_line() +
-  labs(x = "", y = "ciss", title = "Financial Stress") +
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour = "black", fill=NA),  
-    panel.grid.major = element_blank(),  
-    panel.grid.minor = element_blank(),  
-    plot.background = element_blank(),  
-    plot.title = element_text(hjust = 0.5)  
-  )
-
-p4 <- ggplot(Data, aes(x = obstime, y = un)) +
-  geom_line() +
-  labs(x = "", y = "un", title = "Unemployment") +
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour = "black", fill=NA),  
-    panel.grid.major = element_blank(),  
-    panel.grid.minor = element_blank(),  
-    plot.background = element_blank(),  
-    plot.title = element_text(hjust = 0.5)  
-  )
-
-
-grid.arrange(p1, p2, p3, p4, ncol = 2)
-
-# ACF + PACF
+# Change to time series
 Data <- as.ts(Data)
 
-par(mfrow = c(2, 2))
 
-acf(Data[,1], main = "ACF for HICP")
-acf(Data[,2], main = "ACF for IP")
-acf(Data[,3], main = "ACF for CISS")
-acf(Data[,4], main = "ACF for UN")
+# ACF and PACF
+par(mfrow = c(2, 3))
 
-par(mfrow = c(2, 2))
+variable_names <- c("hicp", "ip", "ciss", "un", "m1")
 
-pacf(Data[,1], main = "ACF for HICP")
-pacf(Data[,2], main = "ACF for IP")
-pacf(Data[,3], main = "ACF for CISS")
-pacf(Data[,4], main = "ACF for UN")
+# Loop through the columns and create ACF plots
+for (i in seq_along(variable_names)) {
+  # Compute and plot ACF
+  acf(Data[, i], main = paste("ACF for", variable_names[i]))
+}
+
+par(mfrow = c(2, 3))
+for (i in seq_along(variable_names)) {
+  # Compute and plot PACF
+  pacf(Data[, i], main = paste("PACF for", variable_names[i]))
+}
 
 
-# ADF Test
-
-adf_hicp <- adf.test(Data[,1], k=12, alternative = "stationary")
-adf_ip <- adf.test(Data[,2], k=12, alternative = "stationary")
-adf_ciss <- adf.test(Data[,3], k=12, alternative = "stationary")
-adf_un <- adf.test(Data[,4], k=12, alternative = "stationary")
+for (i in seq_along(variable_names)) {
+  variable_name <- paste("adf", variable_names[i], sep = "_")
+  assign(variable_name, adf.test(Data[, i], k=12, alternative = "stationary"))
+}
 
 adf_results <- data.frame(
-  Variable = c("HICP", "IP", "CISS", "UN"),
-  ADF_Statistic = c(adf_hicp$statistic, adf_ip$statistic, adf_ciss$statistic, adf_un$statistic),
-  P_Value = c(adf_hicp$p.value, adf_ip$p.value, adf_ciss$p.value, adf_un$p.value),
-  Test_Critical_Values = I(list(adf_hicp$cval, adf_ip$cval, adf_ciss$cval, adf_un$cval))
+  Variable = c("HICP", "IP", "CISS", "UN", "M1"),
+  ADF_Statistic = c(adf_hicp$statistic, adf_ip$statistic, adf_ciss$statistic, adf_un$statistic, adf_m1$statistic),
+  P_Value = c(adf_hicp$p.value, adf_ip$p.value, adf_ciss$p.value, adf_un$p.value, adf_m1$p.value),
+  lags = rep(12, 5)
 )
 
-Data_diff <- as.data.frame(lapply(Data, diff))
+knitr::kable(adf_results, digits = 3, align = 'c')
 
-# Run ADF test on the first differences
-adf_hicp_diff <- adf.test(Data_diff[,1], k=12, alternative = "stationary")
-adf_ip_diff <- adf.test(Data_diff[,2], k=12, alternative = "stationary")
-adf_ciss_diff <- adf.test(Data_diff[,3], k=12, alternative = "stationary")
-adf_un_diff <- adf.test(Data_diff[,4], k=12, alternative = "stationary")
 
-# Collect the ADF test results for the first differences in a data frame
-adf_results_diff <- data.frame(
-  Variable = c("HICP", "IP", "CISS", "UN"),
-  ADF_Statistic = c(adf_hicp_diff$statistic, adf_ip_diff$statistic, adf_ciss_diff$statistic, adf_un_diff$statistic),
-  P_Value = c(adf_hicp_diff$p.value, adf_ip_diff$p.value, adf_ciss_diff$p.value, adf_un_diff$p.value),
-  Test_Critical_Values = I(list(adf_hicp_diff$cval, adf_ip_diff$cval, adf_ciss_diff$cval, adf_un_diff$cval))
+
+
+
+
+kpss_hicp <- kpss.test(Data[,1], null = "Trend")
+kpss_ip <- kpss.test(Data[,2], null = "Trend")
+kpss_ciss <- kpss.test(Data[,3], null = "Trend")
+kpss_un <- kpss.test(Data[,4], null = "Trend")
+kpss_m1 <- kpss.test(Data[,5], null = "Trend")
+
+kpss_results <- data.frame(
+  Variable = c("HICP", "IP", "CISS", "UN", "M1"),
+  KPSS_Statistic = c(kpss_hicp$statistic, kpss_ip$statistic, kpss_ciss$statistic, kpss_un$statistic, kpss_m1$statistic),
+  P_Value = c(kpss_hicp$p.value, kpss_ip$p.value, kpss_ciss$p.value, kpss_un$p.value, kpss_m1$p.value)
 )
 
-print(adf_results_diff)
+knitr::kable(kpss_results, digits = 3, align = 'c')

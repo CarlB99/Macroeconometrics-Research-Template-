@@ -40,12 +40,14 @@ The price level in the euro area is included as the Harmonized Index of Consumer
 
 Additionally, I include unemployment in the euro area, as it is both an indicator of economic activity and current expectations to the future. Hence, unemployment serves as an important variable to include when modelling the economy.
 
-Finally I chose to include financial stress, which is measured by composite indicator variable for systemic stress (CISS) in the euro area, as financial conditions and markets highly affects the economic activity, inflation and unemployment.
+I chose to include financial stress, which is measured by composite indicator variable for systemic stress (CISS) in the euro area, as financial conditions and markets highly affects the economic activity, inflation and unemployment.
+
+Finally, I include the M1 money supply in the euro area.
 
 The used time series are collected from the ECB's data warehouse with the chosen time period 01.01.2003 to 2023.12.01. I use the package **ecb** to collect the data.
 
 ## Descriptive analysis
-The four variables are visualized in @fig-tsplots, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation seems to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.
+The five variables are visualized in @fig-tsplots, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation and M1 money supply seem to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.
 
 ```{r package load}
 #| echo: false
@@ -59,8 +61,9 @@ library(tidyr)
 library(ggplot2)
 library(ecb)
 library(gridExtra)
-library(tseries)
 library(bsvars)
+library(lubridate)
+library(tseries)
 
 ```
 
@@ -77,29 +80,34 @@ rm(list = ls())
 start_date_m <- "2003-01" 
 end_date_m <- "2023-12"
 
+# Define the datasets
+series_info <- list(
+  hicp = "ICP.M.U2.Y.000000.3.INX",
+  ciss = "CISS.M.U2.Z0Z.4F.EC.SOV_EW.IDX",
+  ip = "STS.M.I8.Y.PROD.NS0010.4.000",
+  un = "LFSI.M.I9.S.UNEHRT.TOTAL0.15_74.T",
+  m1 = "BSI.M.U2.Y.V.M10.X.1.U2.2300.Z01.E"
+)
 
-HICP <- get_data("ICP.M.U2.Y.000000.3.INX", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
-  transmute(obstime, hicp = obsvalue)
+# Making function to collect data
+prepare_data <- function(series_id, name, start_date, end_date) {
+  get_data(series_id, filter = list(startPeriod = start_date, endPeriod = end_date)) |>
+    transmute(obstime, !!name := obsvalue)
+}
 
-CISS <- get_data("CISS.M.U2.Z0Z.4F.EC.SOV_EW.IDX", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
-  transmute(obstime, ciss = obsvalue)
+# Collecting data
+datasets <- lapply(names(series_info), function(name) {
+  prepare_data(series_info[[name]], name, start_date_m, end_date_m)
+})
 
-IP <- get_data("STS.M.I8.Y.PROD.NS0010.4.000", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
-  transmute(obstime, ip = obsvalue)
-
-UN <- get_data("LFSI.M.I9.S.UNEHRT.TOTAL0.15_74.T", filter = list(startPeriod = start_date_m, endPeriod = end_date_m)) |>
-  transmute(obstime, un = obsvalue)
-
-Data <- HICP |>
-  left_join(IP, by = "obstime") |>
-  left_join(CISS, by = "obstime", suffix = c(".HICP", ".CISS")) |>
-  left_join(UN, by = "obstime", suffix = c("", ".UN"))
+# Merge all datasets by 'obstime'
+Data <- Reduce(function(x, y) left_join(x, y, by = "obstime"), datasets)
 
 Data <- Data |>
-  mutate(across(c(2,3), ~log(.)))
+  mutate(across(c(2, 4, 6), ~log(.)))
 
-Data <- Data |> 
-  mutate(obstime = as.Date(paste0(obstime, "-01")))
+# Convert 'obstime' to Date format
+Data$obstime <- as.Date(paste0(Data$obstime, "-01"))
 
 ```
 
@@ -110,55 +118,30 @@ Data <- Data |>
 #| results: hide
 
 
-# Plotting the variables
+# Define the plot configurations
+plot_settings <- list(
+  list(name = "hicp", title = "Inflation", ylab = "LOG(HICP)"),
+  list(name = "ip", title = "Industrial production", ylab = "LOG(IP)"),
+  list(name = "ciss", title = "Financial Stress", ylab = "CISS"),
+  list(name = "un", title = "Unemployment", ylab = "UN"),
+  list(name = "m1", title = "M1 - Money Stock", ylab = "M1")
+)
 
-p1 <- ggplot(Data, aes(x = obstime, y = hicp)) +
-  geom_line() +
-  labs(x = "", y = "LOG(HICP)", title = "Inflation") +
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour = "black", fill=NA),  
-    panel.grid.major = element_blank(),  
-    panel.grid.minor = element_blank(),  
-    plot.background = element_blank(),  
-    plot.title = element_text(hjust = 0.5)  
-  )
+# Create the plots
+plots <- lapply(plot_settings, function(setting) {
+  ggplot(Data, aes_string(x = "obstime", y = setting$name)) +
+    geom_line() +
+    labs(x = "", y = setting$ylab, title = setting$title) +
+    theme_bw() +
+    theme(
+      panel.border = element_rect(colour = "black", fill=NA),  
+      panel.grid.major = element_blank(),  
+      panel.grid.minor = element_blank(),  
+      plot.background = element_blank(),  
+      plot.title = element_text(hjust = 0.5)  
+    )
+})
 
-p2 <- ggplot(Data, aes(x = obstime, y = ip)) +
-  geom_line() +
-  labs(x = "", y = "LOG(IP)", title = "Industrial production") +
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour = "black", fill=NA),  
-    panel.grid.major = element_blank(),  
-    panel.grid.minor = element_blank(),  
-    plot.background = element_blank(),  
-    plot.title = element_text(hjust = 0.5)  
-  )
-
-p3 <- ggplot(Data, aes(x = obstime, y = ciss)) +
-  geom_line() +
-  labs(x = "", y = "CISS", title = "Financial Stress") +
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour = "black", fill=NA),  
-    panel.grid.major = element_blank(),  
-    panel.grid.minor = element_blank(),  
-    plot.background = element_blank(),  
-    plot.title = element_text(hjust = 0.5)  
-  )
-
-p4 <- ggplot(Data, aes(x = obstime, y = un)) +
-  geom_line() +
-  labs(x = "", y = "UN", title = "Unemployment") +
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour = "black", fill=NA),  
-    panel.grid.major = element_blank(),  
-    panel.grid.minor = element_blank(),  
-    plot.background = element_blank(),  
-    plot.title = element_text(hjust = 0.5)  
-  )
 
 ```
 
@@ -169,7 +152,7 @@ p4 <- ggplot(Data, aes(x = obstime, y = un)) +
 #| label: fig-tsplots
 #| fig-cap: Plots of time series
 
-grid.arrange(p1, p2, p3, p4, ncol = 2)
+grid.arrange(grobs = plots, ncol = 2)
 ```
 
 ## Autocorrelation in the variables
@@ -184,13 +167,16 @@ Additionally, I check for autocorrelation in the time series in @fig-acf and @fi
 #| fig-cap: Autocorrelation plots for the variables
 Data <- as.ts(Data)
 
-par(mfrow = c(2, 2))
+par(mfrow = c(2, 3))
 
-acf(Data[,1], main = "ACF for HICP")
-acf(Data[,2], main = "ACF for IP")
-acf(Data[,3], main = "ACF for CISS")
-acf(Data[,4], main = "ACF for UN")
+variable_names <- c("hicp", "ip", "ciss", "un", "m1")
 
+# Loop through the columns and create ACF plots
+for (i in seq_along(variable_names)) {
+  # Compute and plot ACF
+  acf(Data[, i], main = paste("ACF for", variable_names[i]))
+}
+  
 ```
 
 ```{r PACF}
@@ -200,12 +186,11 @@ acf(Data[,4], main = "ACF for UN")
 #| label: fig-pacf
 #| fig-cap: Partical autocorrelation plots for the variables
 
-par(mfrow = c(2, 2))
-
-pacf(Data[,1], main = "PACF for HICP")
-pacf(Data[,2], main = "PACF for IP")
-pacf(Data[,3], main = "PACF for CISS")
-pacf(Data[,4], main = "PACF for UN")
+par(mfrow = c(2, 3))
+for (i in seq_along(variable_names)) {
+  # Compute and plot PACF
+  pacf(Data[, i], main = paste("PACF for", variable_names[i]))
+}
 
 ```
 
@@ -221,16 +206,16 @@ To test for the timeseries being stationary, I apply an Augmented Dickey Fuller 
 
 # ADF Test
 
-adf_hicp <- adf.test(Data[,1], k=12, alternative = "stationary")
-adf_ip <- adf.test(Data[,2], k=12, alternative = "stationary")
-adf_ciss <- adf.test(Data[,3], k=12, alternative = "stationary")
-adf_un <- adf.test(Data[,4], k=12, alternative = "stationary")
+for (i in seq_along(variable_names)) {
+  variable_name <- paste("adf", variable_names[i], sep = "_")
+  assign(variable_name, adf.test(Data[, i], k=12, alternative = "stationary"))
+}
 
 adf_results <- data.frame(
-  Variable = c("HICP", "IP", "CISS", "UN"),
-  ADF_Statistic = c(adf_hicp$statistic, adf_ip$statistic, adf_ciss$statistic, adf_un$statistic),
-  P_Value = c(adf_hicp$p.value, adf_ip$p.value, adf_ciss$p.value, adf_un$p.value),
-  lags = rep(12, 4)
+  Variable = c("HICP", "IP", "CISS", "UN", "M1"),
+  ADF_Statistic = c(adf_hicp$statistic, adf_ip$statistic, adf_ciss$statistic, adf_un$statistic, adf_m1$statistic),
+  P_Value = c(adf_hicp$p.value, adf_ip$p.value, adf_ciss$p.value, adf_un$p.value, adf_m1$p.value),
+  lags = rep(12, 5)
 )
 
 ```

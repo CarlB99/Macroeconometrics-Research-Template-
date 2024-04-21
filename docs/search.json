@@ -18,7 +18,7 @@
     "href": "index.html#descriptive-analysis",
     "title": "Bayesian VAR Forecast of Macroeconomic and Financial Variables",
     "section": "Descriptive analysis",
-    "text": "Descriptive analysis\nThe four variables are visualized in Figure 1, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation seems to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.\n\n\n\n\n\nFigure 1: Plots of time series"
+    "text": "Descriptive analysis\nThe five variables are visualized in Figure 1, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation and M1 money supply seem to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.\n\n\n\n\n\nFigure 1: Plots of time series"
   },
   {
     "objectID": "index.html#autocorrelation-in-the-variables",
@@ -32,7 +32,7 @@
     "href": "index.html#unit-root-tests",
     "title": "Bayesian VAR Forecast of Macroeconomic and Financial Variables",
     "section": "Unit root tests",
-    "text": "Unit root tests\nTo test for the timeseries being stationary, I apply an Augmented Dickey Fuller (ADF) test, by using the adf(), which tests for the presence an unit root in the time series with the chosen lag of 12 periods, since the data is monthly. Table 1 reports the test statistics for the ADF tests:\n\n\n\n\nTable 1: ADF tests’ statistics with the null hypothesis being a unit root\n\n\nVariable\nADF_Statistic\nP_Value\nlags\n\n\n\n\nHICP\n-5.537\n0.010\n12\n\n\nIP\n-2.954\n0.174\n12\n\n\nCISS\n-2.691\n0.285\n12\n\n\nUN\n-2.260\n0.466\n12\n\n\n\n\n\n\nOnly for inflation can I reject the possibility of an unit root being present at the 5 pct. confidence interval."
+    "text": "Unit root tests\nTo test for the timeseries being stationary, I apply an Augmented Dickey Fuller (ADF) test, by using the adf(), which tests for the presence an unit root in the time series with the chosen lag of 12 periods, since the data is monthly. Table 1 reports the test statistics for the ADF tests:\n\n\n\n\nTable 1: ADF tests’ statistics with the null hypothesis being a unit root\n\n\nVariable\nADF_Statistic\nP_Value\nlags\n\n\n\n\nHICP\n-5.537\n0.010\n12\n\n\nIP\n-2.975\n0.165\n12\n\n\nCISS\n-2.260\n0.466\n12\n\n\nUN\n-2.891\n0.200\n12\n\n\nM1\n-1.339\n0.854\n12\n\n\n\n\n\n\nOnly for inflation can I reject the possibility of an unit root being present at the 5 pct. confidence interval."
   },
   {
     "objectID": "index.html#bayesian-var-forecasting",
