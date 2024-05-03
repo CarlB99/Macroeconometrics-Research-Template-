@@ -8,7 +8,7 @@
 
 <meta name="author" content="Carl Buan">
 
-<title>Macroeconometrics Research Report - Bayesian VAR Forecast of Macroeconomic and Financial Variables</title>
+<title>Macroeconometrics Research Report - Bayesian VAR Forecast of Economic Activity using Macroeconomic and Financial Variables</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -102,8 +136,11 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#autocorrelation-in-the-variables" id="toc-autocorrelation-in-the-variables" class="nav-link" data-scroll-target="#autocorrelation-in-the-variables">Autocorrelation in the variables</a></li>
   <li><a href="#unit-root-tests" id="toc-unit-root-tests" class="nav-link" data-scroll-target="#unit-root-tests">Unit root tests</a></li>
   </ul></li>
-  <li><a href="#the-model" id="toc-the-model" class="nav-link" data-scroll-target="#the-model">The model</a>
+  <li><a href="#the-model" id="toc-the-model" class="nav-link" data-scroll-target="#the-model">The model</a></li>
+  <li><a href="#matrix-version-of-model" id="toc-matrix-version-of-model" class="nav-link" data-scroll-target="#matrix-version-of-model">Matrix version of model</a>
   <ul class="collapse">
+  <li><a href="#baseline-model" id="toc-baseline-model" class="nav-link" data-scroll-target="#baseline-model">Baseline model:</a></li>
+  <li><a href="#extended-model" id="toc-extended-model" class="nav-link" data-scroll-target="#extended-model">Extended model</a></li>
   <li><a href="#bayesian-var-forecasting" id="toc-bayesian-var-forecasting" class="nav-link" data-scroll-target="#bayesian-var-forecasting">Bayesian VAR Forecasting</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul></li>
@@ -119,7 +156,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Bayesian VAR Forecast of Macroeconomic and Financial Variables</h1>
+<h1 class="title">Bayesian VAR Forecast of Economic Activity using Macroeconomic and Financial Variables</h1>
 </div>
 
 
@@ -145,8 +182,8 @@ ul.task-list li input[type="checkbox"] {
 </blockquote>
 <section id="research-question" class="level1">
 <h1>Research question</h1>
-<p>Past financial crises such as in 2008 have shown the severe impact that financial conditions can have on the real economy with crashes followed by increasing unemployment and decreased economic activity. This research project’s aim to analyze the forecasting performance of macroeconomic variables by including financial variables.</p>
-<p>Thus the research question can be stated as: Will including financial variables improve the forecasting performance of the real economy?</p>
+<p>Past financial crises such as in 2008 have shown the severe impact that financial conditions can have on the real economy with crashes followed by increasing unemployment and decreased economic activity. This research project’s aim to analyze the forecasting performance of macroeconomic variables by including financial variables to forecast GDP.</p>
+<p>Thus the research question can be stated as: Will including financial variables improve the forecasting performance of economic activity?</p>
 <section id="motivation" class="level2">
 <h2 class="anchored" data-anchor-id="motivation">Motivation</h2>
 <p>Traditional macroeconomic modelling often exclude financial markets, as the effects from the financial nominal variables on real variables are deemed insignificant per the classical dichotomy in macroeconomics. However, as earlier studies have shown and the descriptive analysis following this will illustrate, changes in the financial sector can spill over to economic activity. Therefore, it could help explaining the real economy, which could translate to improved forecasting performance.</p>
@@ -156,16 +193,18 @@ ul.task-list li input[type="checkbox"] {
 <section id="data-and-its-properties" class="level1">
 <h1>Data and its properties</h1>
 <p>My choice of variables is somewhat inspired by papers like Peersman et. al (2017), who perform SVAR analyses of the ECB’s monetary policy, however, I am instead interested in examining the forecasting ability of macroeconomic variables combined with financial for the euro area. As forecasts are often short-term forecasts of the immediate future, data frequency has to be high, hence all data used in this analysis is monthly.</p>
-<p>The economic variables used in this analysis are then (Note that this will be expanded to include several other macroeconomic variables reflecting the economy):</p>
+<p>The economic variables used in this analysis are then:</p>
 <p>To model the economic activity in the euro area, I use the Industrial Production as proxy for the movements in the Gross Domestic Product (GDP). If I instead opted to use GDP as a variable directly, I would have been required to apply temporal disaggregation, as GDP is tracked quarterly.</p>
 <p>The price level in the euro area is included as the Harmonized Index of Consumer Prices (HICP), which measures the price level and inflation across the euro area. Including the price level is important, as it is a major concern for policy makers and it will affect the economic activity and be affected by financial conditions. The base year of the HICP is 2015.</p>
 <p>Additionally, I include unemployment in the euro area, as it is both an indicator of economic activity and current expectations to the future. Hence, unemployment serves as an important variable to include when modelling the economy.</p>
 <p>I chose to include financial stress, which is measured by composite indicator variable for systemic stress (CISS) in the euro area, as financial conditions and markets highly affects the economic activity, inflation and unemployment.</p>
-<p>Finally, I include the M1 money supply in the euro area.</p>
+<p>I include the M2 money supply in the euro area to include the most liquid part of the overall money supply and short term deposits, as it illustrates the available economic resources in the economy.</p>
+<p>The key ECB interest rate the Main Refinancing Operations (MRO) is included as well, which state the interest that banks have to pay, if they want to borrow money for a week.</p>
+<p>Finally, I include private consumption to measure how much money households are spending, which illustrate the economic activity.</p>
 <p>The used time series are collected from the ECB’s data warehouse with the chosen time period 01.01.2003 to 2023.12.01. I use the package <strong>ecb</strong> to collect the data.</p>
 <section id="descriptive-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="descriptive-analysis">Descriptive analysis</h2>
-<p>The five variables are visualized in <a href="#fig-tsplots">Figure&nbsp;1</a>, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation and M1 money supply seem to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.</p>
+<p>The five variables are visualized in <a href="#fig-tsplots">Figure&nbsp;1</a>, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation and M2 money supply seem to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-tsplots" class="quarto-figure quarto-figure-center anchored">
@@ -226,8 +265,8 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="even">
 <td style="text-align: center;">IP</td>
-<td style="text-align: center;">-2.975</td>
-<td style="text-align: center;">0.165</td>
+<td style="text-align: center;">-2.961</td>
+<td style="text-align: center;">0.171</td>
 <td style="text-align: center;">12</td>
 </tr>
 <tr class="odd">
@@ -243,9 +282,21 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: center;">12</td>
 </tr>
 <tr class="odd">
-<td style="text-align: center;">M1</td>
+<td style="text-align: center;">M2</td>
 <td style="text-align: center;">-1.339</td>
 <td style="text-align: center;">0.854</td>
+<td style="text-align: center;">12</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">MRO</td>
+<td style="text-align: center;">-3.035</td>
+<td style="text-align: center;">0.140</td>
+<td style="text-align: center;">12</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Consumption</td>
+<td style="text-align: center;">0.191</td>
+<td style="text-align: center;">0.990</td>
 <td style="text-align: center;">12</td>
 </tr>
 </tbody>
@@ -264,6 +315,164 @@ y_{t}   =\mu_{0}+A_{1}y_{t-1}+...+A_{\rho}y_{t-\rho}+\epsilon_{t}
 \epsilon_{t}|Y_{T-1}    \sim iid\left(0_{N},\Sigma\right)
 \end{gather}\]</span></p>
 <p>Where <span class="math inline">\(y_{t}=N\times1\)</span> is a vector of observations at time <span class="math inline">\(t\)</span>, <span class="math inline">\(\mu_{0}=N\times1\)</span> is a vector of constant terms, <span class="math inline">\(A_{i}=N\times N\)</span> is a vector of the autoregressive slope parameters, <span class="math inline">\(\epsilon_{t}=N\times1\)</span> is a vector of error terms, <span class="math inline">\(Y_{t-1}\)</span> is the information set and <span class="math inline">\(\Sigma=N\times N\)</span> is the covariance matrix of the error term.</p>
+<p>In matrix form, I have the model as with N=7 variables: <span class="math display">\[\begin{gather}
+Y   =XA+E
+E|X \sim\mathcal{MN}_{T\times N}\left(0_{T\times N},\Sigma,I_{T}\right)
+\end{gather}\]</span></p>
+<p>Where <span class="math inline">\(Y=T\times7\)</span> matrix, <span class="math inline">\(X=T\times\left(1+\left(7\times p\right)\right)\)</span>, <span class="math inline">\(A=\left(1+\left(7\times p\right)\right)\times6\)</span> matrix that has the relationships between the used variables and <span class="math inline">\(E=T\times7\)</span> matrix of error terms. <span class="math inline">\(p=12\)</span> which is the amount of lags for monthly data and in total I have 252 observations of monthly data.</p>
+</section>
+<section id="matrix-version-of-model" class="level1">
+<h1>Matrix version of model</h1>
+<p>In matrix form, I have the model as with <span class="math inline">\(N=7\)</span> variables:</p>
+<p><span class="math display">\[\begin{gather}
+Y   =XA+E
+\end{gather}\]</span></p>
+<p><span class="math display">\[\begin{gather}
+E|X \sim\mathcal{MN}_{T\times N}\left(0_{T\times N},\Sigma,I_{T}\right)
+\end{gather}\]</span></p>
+<p>Where <span class="math inline">\(Y=T\times7\)</span> matrix, <span class="math inline">\(X=T\times\left(1+\left(7\times p\right)\right)\)</span> matrix, <span class="math inline">\(A=\left(1+\left(7\times p\right)\right)\times7\)</span> matrix that has the relationships between the used variables and <span class="math inline">\(E=T\times7\)</span> matrix of error terms. p=12 which is the amount of lags for monthly data and in total I have 252 observations of monthly data.</p>
+<section id="baseline-model" class="level2">
+<h2 class="anchored" data-anchor-id="baseline-model">Baseline model:</h2>
+<p>Then the likelihood function is given by:</p>
+<p><span class="math display">\[\begin{align}
+Y|X,A,\Sigma&amp;\sim\mathcal{MN}_{T\times N}\left(XA,\Sigma,I_{T}\right)\\L\left(A,\Sigma|Y,X\right)&amp;\propto\det\left(\Sigma\right)^{-\frac{T}{2}}\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(Y-XA\right)'\left(Y-XA\right)\right]\right)
+\end{align}\]</span></p>
+<p>The natural conjugate priors for A and are then assumed to follow matrix-variate normal and inverse Wishart distributions:</p>
+<p><span class="math display">\[\begin{align}
+p\left(A,\Sigma\right)&amp;=p\left(A|\Sigma\right)p\left(\Sigma\right)\\A|\Sigma&amp;\sim\mathcal{MN}_{T\times N}\left(\underline{A},\Sigma,\underline{V}\right)\\\Sigma&amp;\sim IW_{N}\left(\underline{S},\underline{\nu}\right)
+  \end{align}\]</span></p>
+<p>Which follow the Minnesota prior set as:</p>
+<p><span class="math display">\[\begin{align}
+\underline{A}&amp;=\left[0_{N\times1},I_{N},0_{N\times\left(p-1\right)N}\right]'\\\underline{V}&amp;=diag\left(\left[\kappa_{2},\kappa_{1}\left(p^{-2}\otimes1_{N}^{'}\right)\right]\right)\\\underline{\nu}&amp;=N+1
+\end{align}\]</span></p>
+<p>Then the posterior distribution will be:</p>
+<p><span class="math display">\[\begin{align}
+p\left(A,\Sigma|Y,X\right)&amp;\propto\det\left(\Sigma\right)^{-\frac{T}{2}}\\&amp;\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(A-\hat{A}\right)'X'X\left(A-\hat{A}\right)\right]\right)\\&amp;\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(Y-X\hat{A}\right)'\left(Y-X\hat{A}\right)\right]\right)\\&amp;\times\det\left(\Sigma\right)^{-\frac{N+K+\underline{\nu}+1}{2}}\\&amp;\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(A-\underline{A}\right)'\underline{V}^{-1}\left(A-\underline{A}\right)\right]\right)\\&amp;\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\underline{S}\right]\right)
+\end{align}\]</span></p>
+<p>Then by combining the terms yields the posterior distributions for <span class="math inline">\(A\)</span> and <span class="math inline">\(\Sigma\)</span> as:</p>
+<p><span class="math display">\[\begin{align}
+p\left(A,\Sigma|Y,X\right)&amp;\propto\det\left(\Sigma\right)^{-\frac{T+N+K+\underline{\nu}+1}{2}}\\&amp;\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left[\left(A-\hat{A}\right)'X'X\left(A-\hat{A}\right)+\left(Y-X\hat{A}\right)'\left(Y-X\hat{A}\right)\right.\right.\right.\\&amp;+\left.\left.\left.\left(A-\underline{A}\right)'\underline{V}^{-1}\left(A-\underline{A}\right)+\underline{S}\right)\right]\right]
+\end{align}\]</span></p>
+<p>Writing all the squares out yields the full conditional as:</p>
+<p><span class="math display">\[\begin{align}
+p\left(A,\Sigma|Y,X\right)&amp;=p\left(A|Y,X,\Sigma\right)p\left(\Sigma|Y,X\right)\\p\left(A|Y,X,\Sigma\right)&amp;=\mathcal{MN}_{T\times N}\left(\overline{A},\Sigma,\overline{V}\right)\\p\left(\Sigma|Y,X\right)&amp;=IW_{N}\left(\overline{S},\overline{\nu}\right)\\\overline{V}&amp;=\left(X'X+V^{-1}\right)^{-1}\\\overline{A}&amp;=\overline{V}\left(X'Y+\underline{V}^{-1}\underline{A}\right)\\\overline{\nu}&amp;=T+\underline{\nu}\\\overline{S}&amp;=\underline{S}+Y'Y+\underline{A}'\underline{V}^{-1}\underline{A}-\overline{A}'\overline{V}^{-1}\overline{A}
+\end{align}\]</span></p>
+<p>The baseline model can be estimated by:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Baseline model BVAR estimation:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Setting specifications</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>N <span class="ot">=</span> <span class="fu">ncol</span>(Data[ , <span class="sc">-</span><span class="dv">1</span>])</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>p <span class="ot">=</span> <span class="dv">12</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>K <span class="ot">=</span> <span class="dv">1</span><span class="sc">+</span>N<span class="sc">*</span>p</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>S <span class="ot">=</span> <span class="dv">1000</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Initializing X and Y matrices</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>y       <span class="ot">=</span> <span class="fu">ts</span>(Data[ , <span class="sc">-</span><span class="dv">1</span>], <span class="at">start=</span><span class="fu">c</span>(<span class="dv">2003</span>,<span class="dv">1</span>), <span class="at">frequency=</span><span class="dv">12</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>Y       <span class="ot">=</span> <span class="fu">ts</span>(y[<span class="dv">13</span><span class="sc">:</span><span class="fu">nrow</span>(y),], <span class="at">start=</span><span class="fu">c</span>(<span class="dv">2004</span>,<span class="dv">1</span>), <span class="at">frequency=</span><span class="dv">12</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>X       <span class="ot">=</span> <span class="fu">matrix</span>(<span class="dv">1</span>,<span class="fu">nrow</span>(Y),<span class="dv">1</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>p){</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  X     <span class="ot">=</span> <span class="fu">cbind</span>(X,y[<span class="dv">13</span><span class="sc">:</span><span class="fu">nrow</span>(y)<span class="sc">-</span>i,])</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Maximum Likelihood Estimator</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>A.hat       <span class="ot">=</span> <span class="fu">solve</span>(<span class="fu">t</span>(X)<span class="sc">%*%</span>X)<span class="sc">%*%</span><span class="fu">t</span>(X)<span class="sc">%*%</span>Y</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>Sigma.hat   <span class="ot">=</span> <span class="fu">t</span>(Y<span class="sc">-</span>X<span class="sc">%*%</span>A.hat)<span class="sc">%*%</span>(Y<span class="sc">-</span>X<span class="sc">%*%</span>A.hat)<span class="sc">/</span>T</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Setting Minnesota Prior</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>kappa<span class="fl">.1</span>           <span class="ot">=</span> <span class="fl">0.02</span><span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>kappa<span class="fl">.2</span>           <span class="ot">=</span> <span class="dv">100</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>A.prior           <span class="ot">=</span> <span class="fu">matrix</span>(<span class="dv">0</span>,<span class="fu">nrow</span>(A.hat),<span class="fu">ncol</span>(A.hat))</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>A.prior[<span class="dv">2</span><span class="sc">:</span>(N<span class="sc">+</span><span class="dv">1</span>),] <span class="ot">=</span> <span class="fu">diag</span>(N)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>priors <span class="ot">=</span> <span class="fu">list</span>(</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">A.prior     =</span> A.prior,</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">V.prior     =</span> <span class="fu">diag</span>(<span class="fu">c</span>(kappa<span class="fl">.2</span>,kappa<span class="fl">.1</span><span class="sc">*</span>((<span class="dv">1</span><span class="sc">:</span>p)<span class="sc">^</span>(<span class="sc">-</span><span class="dv">2</span>))<span class="sc">%x%</span><span class="fu">rep</span>(<span class="dv">1</span>,N))),</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">S.prior     =</span> <span class="fu">diag</span>(<span class="fu">diag</span>(Sigma.hat)),</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">nu.prior    =</span> N<span class="sc">+</span><span class="dv">1</span> </span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="co"># BVAR function</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>BVAR <span class="ot">=</span> <span class="cf">function</span>(Y,X,priors,S){</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>  <span class="co"># normal-inverse Wishart posterior parameters</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>  V.bar.inv   <span class="ot">=</span> <span class="fu">t</span>(X)<span class="sc">%*%</span>X <span class="sc">+</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">diag</span>(priors<span class="sc">$</span>V.prior))</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>  V.bar       <span class="ot">=</span> <span class="fu">solve</span>(V.bar.inv)</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>  A.bar       <span class="ot">=</span> V.bar<span class="sc">%*%</span>(<span class="fu">t</span>(X)<span class="sc">%*%</span>Y <span class="sc">+</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">diag</span>(priors<span class="sc">$</span>V.prior))<span class="sc">%*%</span>priors<span class="sc">$</span>A.prior)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>  nu.bar      <span class="ot">=</span> <span class="fu">nrow</span>(Y) <span class="sc">+</span> priors<span class="sc">$</span>nu.prior</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>  S.bar       <span class="ot">=</span> priors<span class="sc">$</span>S.prior <span class="sc">+</span> <span class="fu">t</span>(Y)<span class="sc">%*%</span>Y <span class="sc">+</span> <span class="fu">t</span>(priors<span class="sc">$</span>A.prior)<span class="sc">%*%</span><span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">diag</span>(priors<span class="sc">$</span>V.prior))<span class="sc">%*%</span>priors<span class="sc">$</span>A.prior <span class="sc">-</span> <span class="fu">t</span>(A.bar)<span class="sc">%*%</span>V.bar.inv<span class="sc">%*%</span>A.bar</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>  S.bar.inv   <span class="ot">=</span> <span class="fu">solve</span>(S.bar)</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>  <span class="co">#posterior draws</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>  Sigma.posterior   <span class="ot">=</span> <span class="fu">rWishart</span>(<span class="fu">sum</span>(S), <span class="at">df=</span>nu.bar, <span class="at">Sigma=</span>S.bar.inv)</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>  Sigma.posterior   <span class="ot">=</span> <span class="fu">apply</span>(Sigma.posterior,<span class="dv">3</span>,solve)</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>  Sigma.posterior   <span class="ot">=</span> <span class="fu">array</span>(Sigma.posterior,<span class="fu">c</span>(N,N,<span class="fu">sum</span>(S)))</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>  A.posterior       <span class="ot">=</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="fu">prod</span>(<span class="fu">c</span>(<span class="fu">dim</span>(A.bar),<span class="fu">sum</span>(S)))),<span class="fu">c</span>(<span class="fu">dim</span>(A.bar),<span class="fu">sum</span>(S)))</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>  L                 <span class="ot">=</span> <span class="fu">t</span>(<span class="fu">chol</span>(V.bar))</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (s <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">sum</span>(S)){</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>    A.posterior[,,s]<span class="ot">=</span> A.bar <span class="sc">+</span> L<span class="sc">%*%</span>A.posterior[,,s]<span class="sc">%*%</span><span class="fu">chol</span>(Sigma.posterior[,,s])</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>  posterior <span class="ot">=</span> <span class="fu">list</span>(</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sigma.posterior   =</span> Sigma.posterior,</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>    <span class="at">A.posterior       =</span> A.posterior</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(posterior)</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a><span class="co"># Applying BVAR function</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>posterior.draws <span class="ot">=</span> <span class="fu">BVAR</span>(<span class="at">Y=</span>Y, <span class="at">X=</span>X, <span class="at">priors=</span>priors, <span class="at">S=</span>S)</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">apply</span>(posterior.draws<span class="sc">$</span>Sigma.posterior, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, mean),<span class="dv">3</span>)</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">apply</span>(posterior.draws<span class="sc">$</span>A.posterior, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, mean),<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>To demonstrate that it works, I generate a bivariate Gaussian random walk process with 1 lag:</p>
+<div class="cell" data-result="true">
+<div class="cell-output cell-output-stdout">
+<pre><code>      [,1]  [,2]
+[1,] 0.958 0.044
+[2,] 0.044 1.030</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       [,1]   [,2]
+[1,] -0.083 -0.013
+[2,]  0.992  0.007
+[3,] -0.001  0.999</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The posterior mean of the matrices are close to an identity matrix and for the constant term, it is close to a zero vector. Hence, the estimation appears robust.</p>
+</section>
+<section id="extended-model" class="level2">
+<h2 class="anchored" data-anchor-id="extended-model">Extended model</h2>
+<p>As I plan to include private consumption as variable, I will have to extend the model, as consumption is only tracked quarterly, so I will need to estimate the monthly values between the quarterly data. This extension can be represented:</p>
+<p><span class="math display">\[\begin{align}
+\tilde{y}_{t^{*}}&amp;=A_{1}y_{t^{*}-1}+\epsilon_{t^{*}}\\\tilde{y}_{t^{*}+1}&amp;=A_{1}\tilde{y}_{t^{*}}+\epsilon_{t^{*}+1}\\\epsilon_{t^{*}}&amp;\sim N\left(0,\Sigma\right)
+\end{align}\]</span></p>
+<p>Then I have the kernels as:</p>
+<p><span class="math display">\[\begin{align}
+\exp\left(-\frac{1}{2}\left(\tilde{y}_{t^{*}}-A_{1}y_{t^{*}-1}\right)'\Sigma^{-1}\left(\tilde{y}_{t^{*}}-A_{1}y_{t^{*}-1}\right)\right)\\\exp\left(-\frac{1}{2}\left(A_{1}\tilde{y}_{t^{*}}-y_{t^{*}+1}\right)'\Sigma^{-1}\left(A_{1}\tilde{y}_{t^{*}}-y_{t^{*}+1}\right)\right)
+\end{align}\]</span></p>
+<p>Thus we have the extension’s full conditional posterior for extension as:</p>
+<p><span class="math display">\[\begin{align}
+\tilde{y}_{t^{*}}&amp;\sim N_{N}\left(\bar{\tilde{y}}_{t^{*}},\bar{V}_{t^{*}}\right)\\\bar{V}_{t^{*}}&amp;=\left[\Sigma^{-1}+A'\Sigma^{-1}A\right]^{-1}\\\bar{\tilde{y}}_{t^{*}}&amp;=\bar{V}_{t^{*}}\left[\Sigma^{-1}Ay_{t^{*}+1}+A'\Sigma^{-1}y_{t^{*}+1}\right]\\\tilde{y}_{t^{*}1}|\tilde{y}_{t^{*}2}&amp;\sim N\left(\bar{\tilde{y}}_{t^{*}1},\bar{V}_{t^{*}1}\right)
+\end{align}\]</span></p>
+<p>Then the code will be changed by including the sampling of the missing <span class="math inline">\(\tilde{y}_{t^{*}}\)</span> in the Gibbs Sampler:</p>
+<p>For each <span class="math inline">\(s\in\left\{ 1,...,S\right\})\)</span></p>
+<p><span class="math display">\[\begin{align}
+1)&amp;\text{Sample }A^{\left(S\right)},\Sigma^{\left(S\right)}\sim p\left(A,\Sigma|Y,X,\tilde{y}^{\left(s-1\right)}\right)\\2)&amp;\text{Sample }\tilde{y}^{\left(s\right)}\sim p\left(\tilde{y}|Y,X,A^{\left(S\right)},\Sigma^{\left(S\right)}\right)
+\end{align}\]</span></p>
+<p>Which yield: <span class="math inline">\(A^{\left(S\right)},\Sigma^{\left(S\right)},\tilde{y}^{\left(s\right)}\)</span></p>
+<p>The code is then as follows:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Extended model BVAR estimation - Not inserted as I am really not sure what is the correct way forward - ignore it:</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
 <section id="bayesian-var-forecasting" class="level2">
 <h2 class="anchored" data-anchor-id="bayesian-var-forecasting">Bayesian VAR Forecasting</h2>
 </section>

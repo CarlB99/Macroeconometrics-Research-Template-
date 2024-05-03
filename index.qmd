@@ -1,5 +1,5 @@
 ---
-title: "Bayesian VAR Forecast of Macroeconomic and Financial Variables"
+title: "Bayesian VAR Forecast of Economic Activity using Macroeconomic and Financial Variables"
 author: "Carl Buan"
 
 execute:
@@ -18,9 +18,9 @@ format:
 > **Abstract**
 
 # Research question
-Past financial crises such as in 2008 have shown the severe impact that financial conditions can have on the real economy with crashes followed by increasing unemployment and decreased economic activity. This research project's aim to analyze the forecasting performance of macroeconomic variables by including financial variables.
+Past financial crises such as in 2008 have shown the severe impact that financial conditions can have on the real economy with crashes followed by increasing unemployment and decreased economic activity. This research project's aim to analyze the forecasting performance of macroeconomic variables by including financial variables to forecast GDP.
  
-Thus the research question can be stated as: Will including financial variables improve the forecasting performance of the real economy?
+Thus the research question can be stated as: Will including financial variables improve the forecasting performance of economic activity?
 
 ## Motivation
 
@@ -32,7 +32,7 @@ As both monetary and fiscal policy is not only based on current economic conditi
 My choice of variables is somewhat inspired by papers like Peersman et. al (2017), who perform SVAR analyses of the ECB's monetary policy, however, I am instead interested in examining the forecasting ability of macroeconomic variables combined with financial for the euro area. 
 As forecasts are often short-term forecasts of the immediate future, data frequency has to be high, hence all data used in this analysis is monthly.
 
-The economic variables used in this analysis are then (Note that this will be expanded to include several other macroeconomic variables reflecting the economy):
+The economic variables used in this analysis are then:
 
 To model the economic activity in the euro area, I use the Industrial Production as proxy for the movements in the Gross Domestic Product (GDP). If I instead opted to use GDP as a variable directly, I would have been required to apply temporal disaggregation, as GDP is tracked quarterly.
 
@@ -42,12 +42,17 @@ Additionally, I include unemployment in the euro area, as it is both an indicato
 
 I chose to include financial stress, which is measured by composite indicator variable for systemic stress (CISS) in the euro area, as financial conditions and markets highly affects the economic activity, inflation and unemployment.
 
-Finally, I include the M1 money supply in the euro area.
+I include the M2 money supply in the euro area to include the most liquid part of the overall money supply and short term deposits, as it illustrates the available economic resources in the economy.
+
+The key ECB interest rate the Main Refinancing Operations (MRO) is included as well, which state the interest that banks have to pay, if they want to borrow money for a week. 
+
+Finally, I include private consumption to measure how much money households are spending, which illustrate the economic activity.
+
 
 The used time series are collected from the ECB's data warehouse with the chosen time period 01.01.2003 to 2023.12.01. I use the package **ecb** to collect the data.
 
 ## Descriptive analysis
-The five variables are visualized in @fig-tsplots, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation and M1 money supply seem to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.
+The five variables are visualized in @fig-tsplots, where I have taken the logarithm to all variables except from the indicator variable CISS. Inflation and M2 money supply seem to follow an upwards trend, while industrial production, financial stress and unemployment all seem to follow each other, such that industrial production is negative correlated with unemployment and financial stress. Intuitively it makes sense that economic activity decreases with increasing unemployment or stress and uncertainty in the financial sector.
 
 ```{r package load}
 #| echo: false
@@ -64,6 +69,8 @@ library(gridExtra)
 library(bsvars)
 library(lubridate)
 library(tseries)
+library(zoo)
+library(tempdisagg)
 
 ```
 
@@ -86,7 +93,7 @@ series_info <- list(
   ciss = "CISS.M.U2.Z0Z.4F.EC.SOV_EW.IDX",
   ip = "STS.M.I8.Y.PROD.NS0010.4.000",
   un = "LFSI.M.I9.S.UNEHRT.TOTAL0.15_74.T",
-  m1 = "BSI.M.U2.Y.V.M10.X.1.U2.2300.Z01.E"
+  m2 = "BSI.M.U2.Y.V.M20.X.1.U2.2300.Z01.E"
 )
 
 # Making function to collect data
@@ -100,14 +107,47 @@ datasets <- lapply(names(series_info), function(name) {
   prepare_data(series_info[[name]], name, start_date_m, end_date_m)
 })
 
-# Merge all datasets by 'obstime'
-Data <- Reduce(function(x, y) left_join(x, y, by = "obstime"), datasets)
+# Collecting daily data
+mro <- get_data("FM.B.U2.EUR.4F.KR.MRR_FR.LEV") |>
+  mutate(obstime = as.Date(obstime))
 
-Data <- Data |>
+# Creating a full sequence of dates for the range and merging with original data
+mro <- data.frame(obstime = seq(from = as.Date("2003-01-01"), to = as.Date("2023-12-31"), by = "day")) |>
+  left_join(mro, by = "obstime") |>
+  mutate(obsvalue = na.locf(obsvalue, na.rm = FALSE)) |>
+  mutate(obsvalue = na.locf(obsvalue, fromLast = TRUE, na.rm = FALSE)) |>
+  select(obstime, obsvalue)
+
+# Transforming to monthly data
+mro <- mro |>
+  group_by(obstime = as.yearmon(obstime)) |>
+  summarize(mro = last(obsvalue)) |>
+  mutate(obstime = as.Date(obstime))
+
+# Collecting quarterly data - BAD CODE - IGNORE IT
+consumption <- get_data("MNA.Q.Y.I9.W0.S1M.S1.D.P31._Z._Z._T.EUR.V.N") |>
+  select(obstime, obsvalue) |>
+  slice(-1:-32)  # Removes the first years
+consumption_ts <- ts(consumption$obsvalue, start = c(2003, 1), frequency = 4)
+monthly_consumption <- td(consumption_ts ~1, to = "monthly", method = "chow-lin-maxlog", conversion = "average")
+start_date <- as.Date("2003-01-01")
+monthly_dates <- seq(from = start_date, by = "month", length = length(monthly_consumption$values))
+consumption <- data.frame(obstime = monthly_dates, consumption = log(monthly_consumption$values) )
+
+
+# Merge all datasets by 'obstime'
+Data_function <- Reduce(function(x, y) left_join(x, y, by = "obstime"), datasets)
+
+Data <- Data_function |>
   mutate(across(c(2, 4, 6), ~log(.)))
 
 # Convert 'obstime' to Date format
 Data$obstime <- as.Date(paste0(Data$obstime, "-01"))
+
+# Appending data
+Data <- Data |>
+  left_join(mro, by = "obstime") |>
+  left_join(consumption, by = "obstime")
 
 ```
 
@@ -124,7 +164,9 @@ plot_settings <- list(
   list(name = "ip", title = "Industrial production", ylab = "LOG(IP)"),
   list(name = "ciss", title = "Financial Stress", ylab = "CISS"),
   list(name = "un", title = "Unemployment", ylab = "UN"),
-  list(name = "m1", title = "M1 - Money Stock", ylab = "M1")
+  list(name = "m2", title = "M2 - Money Stock", ylab = "LOG(M2)"),
+  list(name = "mro", title = "ECB interest rate", ylab ="MRO"),
+  list(name = "consumption", title = "Private Consumption Euro Area", ylab="LOG(C)")
 )
 
 # Create the plots
@@ -165,11 +207,15 @@ Additionally, I check for autocorrelation in the time series in @fig-acf and @fi
 #| warning: false
 #| label: fig-acf
 #| fig-cap: Autocorrelation plots for the variables
+
+# Change to time series
 Data <- as.ts(Data)
 
-par(mfrow = c(2, 3))
 
-variable_names <- c("hicp", "ip", "ciss", "un", "m1")
+# ACF and PACF
+par(mfrow = c(3, 3))
+
+variable_names <- c("hicp", "ip", "ciss", "un", "m2", "mro", "consumption")
 
 # Loop through the columns and create ACF plots
 for (i in seq_along(variable_names)) {
@@ -186,7 +232,7 @@ for (i in seq_along(variable_names)) {
 #| label: fig-pacf
 #| fig-cap: Partical autocorrelation plots for the variables
 
-par(mfrow = c(2, 3))
+par(mfrow = c(3, 3))
 for (i in seq_along(variable_names)) {
   # Compute and plot PACF
   pacf(Data[, i], main = paste("PACF for", variable_names[i]))
@@ -212,10 +258,10 @@ for (i in seq_along(variable_names)) {
 }
 
 adf_results <- data.frame(
-  Variable = c("HICP", "IP", "CISS", "UN", "M1"),
-  ADF_Statistic = c(adf_hicp$statistic, adf_ip$statistic, adf_ciss$statistic, adf_un$statistic, adf_m1$statistic),
-  P_Value = c(adf_hicp$p.value, adf_ip$p.value, adf_ciss$p.value, adf_un$p.value, adf_m1$p.value),
-  lags = rep(12, 5)
+  Variable = c("HICP", "IP", "CISS", "UN", "M2", "MRO", "Consumption"),
+  ADF_Statistic = c(adf_hicp$statistic, adf_ip$statistic, adf_ciss$statistic, adf_un$statistic, adf_m2$statistic, adf_mro$statistic, adf_consumption$statistic),
+  P_Value = c(adf_hicp$p.value, adf_ip$p.value, adf_ciss$p.value, adf_un$p.value, adf_m2$p.value, adf_mro$p.value, adf_consumption$p.value),
+  lags = rep(12, 7)
 )
 
 ```
@@ -239,6 +285,244 @@ y_{t}	=\mu_{0}+A_{1}y_{t-1}+...+A_{\rho}y_{t-\rho}+\epsilon_{t}
 \end{gather}
 
 Where $y_{t}=N\times1$ is a vector of observations at time $t$, $\mu_{0}=N\times1$ is a vector of constant terms, $A_{i}=N\times N$ is a vector of the autoregressive slope parameters, $\epsilon_{t}=N\times1$ is a vector of error terms, $Y_{t-1}$ is the information set and $\Sigma=N\times N$ is the covariance matrix of the error term.    
+
+In matrix form, I have the model as with N=7 variables:
+\begin{gather}
+Y	=XA+E
+E|X	\sim\mathcal{MN}_{T\times N}\left(0_{T\times N},\Sigma,I_{T}\right)
+\end{gather}
+
+Where $Y=T\times7$ matrix, $X=T\times\left(1+\left(7\times p\right)\right)$, $A=\left(1+\left(7\times p\right)\right)\times6$ matrix that has the relationships between the used variables and $E=T\times7$ matrix of error terms. $p=12$ which is the amount of lags for monthly data and in total I have 252 observations of monthly data.
+
+# Matrix version of model
+In matrix form, I have the model as with $N=7$ variables:
+
+\begin{gather}
+Y	=XA+E
+\end{gather}
+
+\begin{gather}
+E|X	\sim\mathcal{MN}_{T\times N}\left(0_{T\times N},\Sigma,I_{T}\right)
+\end{gather}
+
+Where $Y=T\times7$ matrix, $X=T\times\left(1+\left(7\times p\right)\right)$ matrix, $A=\left(1+\left(7\times p\right)\right)\times7$ matrix that has the relationships between the used variables and $E=T\times7$ matrix of error terms. p=12 which is the amount of lags for monthly data and in total I have 252 observations of monthly data.
+
+## Baseline model:
+Then the likelihood function is given by:
+
+\begin{align}
+Y|X,A,\Sigma&\sim\mathcal{MN}_{T\times N}\left(XA,\Sigma,I_{T}\right)\\L\left(A,\Sigma|Y,X\right)&\propto\det\left(\Sigma\right)^{-\frac{T}{2}}\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(Y-XA\right)'\left(Y-XA\right)\right]\right)
+\end{align}
+
+
+The natural conjugate priors for A and \Sigma are then assumed to follow matrix-variate normal and inverse Wishart distributions:
+
+\begin{align}
+p\left(A,\Sigma\right)&=p\left(A|\Sigma\right)p\left(\Sigma\right)\\A|\Sigma&\sim\mathcal{MN}_{T\times N}\left(\underline{A},\Sigma,\underline{V}\right)\\\Sigma&\sim IW_{N}\left(\underline{S},\underline{\nu}\right)
+  \end{align}
+
+
+Which follow the Minnesota prior set as:
+
+\begin{align}
+\underline{A}&=\left[0_{N\times1},I_{N},0_{N\times\left(p-1\right)N}\right]'\\\underline{V}&=diag\left(\left[\kappa_{2},\kappa_{1}\left(p^{-2}\otimes1_{N}^{'}\right)\right]\right)\\\underline{\nu}&=N+1
+\end{align}
+
+Then the posterior distribution will be:
+
+\begin{align}
+p\left(A,\Sigma|Y,X\right)&\propto\det\left(\Sigma\right)^{-\frac{T}{2}}\\&\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(A-\hat{A}\right)'X'X\left(A-\hat{A}\right)\right]\right)\\&\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(Y-X\hat{A}\right)'\left(Y-X\hat{A}\right)\right]\right)\\&\times\det\left(\Sigma\right)^{-\frac{N+K+\underline{\nu}+1}{2}}\\&\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(A-\underline{A}\right)'\underline{V}^{-1}\left(A-\underline{A}\right)\right]\right)\\&\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\underline{S}\right]\right)
+\end{align}
+
+Then by combining the terms yields the posterior distributions for $A$ and $\Sigma$ as:
+
+\begin{align}
+p\left(A,\Sigma|Y,X\right)&\propto\det\left(\Sigma\right)^{-\frac{T+N+K+\underline{\nu}+1}{2}}\\&\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left[\left(A-\hat{A}\right)'X'X\left(A-\hat{A}\right)+\left(Y-X\hat{A}\right)'\left(Y-X\hat{A}\right)\right.\right.\right.\\&+\left.\left.\left.\left(A-\underline{A}\right)'\underline{V}^{-1}\left(A-\underline{A}\right)+\underline{S}\right)\right]\right]
+\end{align}
+
+Writing all the squares out yields the full conditional as:
+
+\begin{align}
+p\left(A,\Sigma|Y,X\right)&=p\left(A|Y,X,\Sigma\right)p\left(\Sigma|Y,X\right)\\p\left(A|Y,X,\Sigma\right)&=\mathcal{MN}_{T\times N}\left(\overline{A},\Sigma,\overline{V}\right)\\p\left(\Sigma|Y,X\right)&=IW_{N}\left(\overline{S},\overline{\nu}\right)\\\overline{V}&=\left(X'X+V^{-1}\right)^{-1}\\\overline{A}&=\overline{V}\left(X'Y+\underline{V}^{-1}\underline{A}\right)\\\overline{\nu}&=T+\underline{\nu}\\\overline{S}&=\underline{S}+Y'Y+\underline{A}'\underline{V}^{-1}\underline{A}-\overline{A}'\overline{V}^{-1}\overline{A}
+\end{align}
+
+The baseline model can be estimated by:
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| results: hide
+
+### Baseline model BVAR estimation:
+
+# Setting specifications
+N = ncol(Data[ , -1])
+p = 12
+K = 1+N*p
+S = 1000
+set.seed(1)
+
+# Initializing X and Y matrices
+y       = ts(Data[ , -1], start=c(2003,1), frequency=12)
+Y       = ts(y[13:nrow(y),], start=c(2004,1), frequency=12)
+X       = matrix(1,nrow(Y),1)
+for (i in 1:p){
+  X     = cbind(X,y[13:nrow(y)-i,])
+}
+
+
+# Maximum Likelihood Estimator
+A.hat       = solve(t(X)%*%X)%*%t(X)%*%Y
+Sigma.hat   = t(Y-X%*%A.hat)%*%(Y-X%*%A.hat)/T
+
+# Setting Minnesota Prior
+kappa.1           = 0.02^2
+kappa.2           = 100
+A.prior           = matrix(0,nrow(A.hat),ncol(A.hat))
+A.prior[2:(N+1),] = diag(N)
+
+priors = list(
+  A.prior     = A.prior,
+  V.prior     = diag(c(kappa.2,kappa.1*((1:p)^(-2))%x%rep(1,N))),
+  S.prior     = diag(diag(Sigma.hat)),
+  nu.prior    = N+1 
+)
+
+# BVAR function
+
+BVAR = function(Y,X,priors,S){
+  
+  # normal-inverse Wishart posterior parameters
+  V.bar.inv   = t(X)%*%X + diag(1/diag(priors$V.prior))
+  V.bar       = solve(V.bar.inv)
+  A.bar       = V.bar%*%(t(X)%*%Y + diag(1/diag(priors$V.prior))%*%priors$A.prior)
+  nu.bar      = nrow(Y) + priors$nu.prior
+  S.bar       = priors$S.prior + t(Y)%*%Y + t(priors$A.prior)%*%diag(1/diag(priors$V.prior))%*%priors$A.prior - t(A.bar)%*%V.bar.inv%*%A.bar
+  S.bar.inv   = solve(S.bar)
+  
+  #posterior draws
+  Sigma.posterior   = rWishart(sum(S), df=nu.bar, Sigma=S.bar.inv)
+  Sigma.posterior   = apply(Sigma.posterior,3,solve)
+  Sigma.posterior   = array(Sigma.posterior,c(N,N,sum(S)))
+  A.posterior       = array(rnorm(prod(c(dim(A.bar),sum(S)))),c(dim(A.bar),sum(S)))
+  L                 = t(chol(V.bar))
+  
+  for (s in 1:sum(S)){
+    A.posterior[,,s]= A.bar + L%*%A.posterior[,,s]%*%chol(Sigma.posterior[,,s])
+  }
+  
+  posterior = list(
+    Sigma.posterior   = Sigma.posterior,
+    A.posterior       = A.posterior
+  )
+  return(posterior)
+}
+
+# Applying BVAR function
+posterior.draws = BVAR(Y=Y, X=X, priors=priors, S=S)
+round(apply(posterior.draws$Sigma.posterior, 1:2, mean),3)
+round(apply(posterior.draws$A.posterior, 1:2, mean),3)
+
+```
+
+To demonstrate that it works, I generate a bivariate Gaussian random walk process with 1 lag:
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| result: true
+
+### Showing baseline model
+# Specifications
+p = 1
+N = 2
+K = 1+N*p
+S = 1000
+
+# generate random walk processes
+rw_data = data.frame(matrix(nrow=1000, ncol=2))
+rw_data[,1] = cumsum(rnorm(1000,0,1))
+rw_data[,2] = cumsum(rnorm(1000,0,1))
+y       = matrix(cbind(rw_data[,1],rw_data[,2]),nrow=1000,ncol=N)
+
+# Set X and Y matrices
+Y       = ts(y[2:nrow(y),])
+X       = matrix(1,nrow(Y),1)
+X       = cbind(X,y[1:nrow(y)-p,])
+
+# MLE
+A.hat       = solve(t(X)%*%X)%*%t(X)%*%Y
+Sigma.hat   = t(Y-X%*%A.hat)%*%(Y-X%*%A.hat)/nrow(Y)
+
+# Minnesota prior
+kappa.1           = 0.02^2
+kappa.2           = 100
+A.prior           = matrix(0,nrow(A.hat),ncol(A.hat))
+A.prior[2:(N+1),] = diag(N)
+
+priors = list(
+  A.prior     = A.prior,
+  V.prior     = diag(c(kappa.2,kappa.1*((1:p)^(-2))%x%rep(1,N))),
+  S.prior     = diag(diag(Sigma.hat)),
+  nu.prior    = N+1 
+)
+
+# Demonstration
+posterior.draws = BVAR(Y=Y, X=X, priors=priors, S=S)
+round(apply(posterior.draws$Sigma.posterior, 1:2, mean),3)
+round(apply(posterior.draws$A.posterior, 1:2, mean),3)
+
+plot(rw_data[,1], type='l', ylim=c(min(rw_data), max(rw_data)), col='red', ylab='', xlab='', main='Bivariate Random Walk')
+lines(rw_data[,2], col='blue', ylab='', xlab='')
+
+```
+The posterior mean of the matrices are close to an identity matrix and for the constant term, it is close to a zero vector. Hence, the estimation appears robust.
+
+## Extended model
+
+As I plan to include private consumption as variable, I will have to extend the model, as consumption is only tracked quarterly, so I will need to estimate the monthly values between the quarterly data. This extension can be represented:
+
+\begin{align}
+\tilde{y}_{t^{*}}&=A_{1}y_{t^{*}-1}+\epsilon_{t^{*}}\\\tilde{y}_{t^{*}+1}&=A_{1}\tilde{y}_{t^{*}}+\epsilon_{t^{*}+1}\\\epsilon_{t^{*}}&\sim N\left(0,\Sigma\right)
+\end{align}
+
+Then I have the kernels as:
+
+\begin{align}
+\exp\left(-\frac{1}{2}\left(\tilde{y}_{t^{*}}-A_{1}y_{t^{*}-1}\right)'\Sigma^{-1}\left(\tilde{y}_{t^{*}}-A_{1}y_{t^{*}-1}\right)\right)\\\exp\left(-\frac{1}{2}\left(A_{1}\tilde{y}_{t^{*}}-y_{t^{*}+1}\right)'\Sigma^{-1}\left(A_{1}\tilde{y}_{t^{*}}-y_{t^{*}+1}\right)\right)
+\end{align}
+
+Thus we have the extension's full conditional posterior for extension as:
+
+\begin{align}
+\tilde{y}_{t^{*}}&\sim N_{N}\left(\bar{\tilde{y}}_{t^{*}},\bar{V}_{t^{*}}\right)\\\bar{V}_{t^{*}}&=\left[\Sigma^{-1}+A'\Sigma^{-1}A\right]^{-1}\\\bar{\tilde{y}}_{t^{*}}&=\bar{V}_{t^{*}}\left[\Sigma^{-1}Ay_{t^{*}+1}+A'\Sigma^{-1}y_{t^{*}+1}\right]\\\tilde{y}_{t^{*}1}|\tilde{y}_{t^{*}2}&\sim N\left(\bar{\tilde{y}}_{t^{*}1},\bar{V}_{t^{*}1}\right)
+\end{align}
+
+Then the code will be changed by including the sampling of the missing $\tilde{y}_{t^{*}}$ in the Gibbs Sampler:
+
+For each $s\in\left\{ 1,...,S\right\})$	
+
+\begin{align}
+1)&\text{Sample }A^{\left(S\right)},\Sigma^{\left(S\right)}\sim p\left(A,\Sigma|Y,X,\tilde{y}^{\left(s-1\right)}\right)\\2)&\text{Sample }\tilde{y}^{\left(s\right)}\sim p\left(\tilde{y}|Y,X,A^{\left(S\right)},\Sigma^{\left(S\right)}\right)
+\end{align}
+
+Which yield: $A^{\left(S\right)},\Sigma^{\left(S\right)},\tilde{y}^{\left(s\right)}$
+
+The code is then as follows:
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| results: hide
+
+### Extended model BVAR estimation - Not inserted as I am really not sure what is the correct way forward - ignore it:
+
+
+```
+
 
 ## Bayesian VAR Forecasting
 
