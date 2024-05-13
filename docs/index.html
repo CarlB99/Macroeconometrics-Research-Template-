@@ -140,7 +140,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#matrix-version-of-model" id="toc-matrix-version-of-model" class="nav-link" data-scroll-target="#matrix-version-of-model">Matrix version of model</a></li>
   </ul></li>
-  <li><a href="#baseline-model" id="toc-baseline-model" class="nav-link" data-scroll-target="#baseline-model">Baseline model:</a></li>
+  <li><a href="#baseline-model" id="toc-baseline-model" class="nav-link" data-scroll-target="#baseline-model">Baseline model:</a>
+  <ul class="collapse">
+  <li><a href="#minnesota-prior" id="toc-minnesota-prior" class="nav-link" data-scroll-target="#minnesota-prior">Minnesota prior</a></li>
+  </ul></li>
   <li><a href="#extended-model" id="toc-extended-model" class="nav-link" data-scroll-target="#extended-model">Extended model</a></li>
   <li><a href="#bayesian-var-stochastic-volatility" id="toc-bayesian-var-stochastic-volatility" class="nav-link" data-scroll-target="#bayesian-var-stochastic-volatility">Bayesian VAR Stochastic Volatility</a></li>
   <li><a href="#bayesian-var-forecasting" id="toc-bayesian-var-forecasting" class="nav-link" data-scroll-target="#bayesian-var-forecasting">Bayesian VAR Forecasting</a>
@@ -148,10 +151,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#bayesian-var-baseline-model-forecast" id="toc-bayesian-var-baseline-model-forecast" class="nav-link" data-scroll-target="#bayesian-var-baseline-model-forecast">Bayesian VAR baseline model forecast</a></li>
   <li><a href="#bayesian-var-sv-forecasting" id="toc-bayesian-var-sv-forecasting" class="nav-link" data-scroll-target="#bayesian-var-sv-forecasting">Bayesian VAR SV forecasting</a></li>
   </ul></li>
-  <li><a href="#showing-models" id="toc-showing-models" class="nav-link" data-scroll-target="#showing-models">Showing models</a>
-  <ul class="collapse">
+  <li><a href="#showing-models" id="toc-showing-models" class="nav-link" data-scroll-target="#showing-models">Showing models</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
-  </ul></li>
   </ul>
 </nav>
 </nav>
@@ -350,10 +351,14 @@ Y|X,A,\Sigma&amp;\sim\mathcal{MN}_{T\times N}\left(XA,\Sigma,I_{T}\right)\\L\lef
 <p><span class="math display">\[\begin{align}
 p\left(A,\Sigma\right)&amp;=p\left(A|\Sigma\right)p\left(\Sigma\right)\\A|\Sigma&amp;\sim\mathcal{MN}_{T\times N}\left(\underline{A},\Sigma,\underline{V}\right)\\\Sigma&amp;\sim IW_{N}\left(\underline{S},\underline{\nu}\right)
   \end{align}\]</span></p>
+<section id="minnesota-prior" class="level2">
+<h2 class="anchored" data-anchor-id="minnesota-prior">Minnesota prior</h2>
+<p>(Some definition and backgrounds of Minnesota prior and why we use it)</p>
 <p>Which follow the Minnesota prior set as:</p>
 <p><span class="math display">\[\begin{align}
 \underline{A}&amp;=\left[0_{N\times1},I_{N},0_{N\times\left(p-1\right)N}\right]'\\\underline{V}&amp;=diag\left(\left[\kappa_{2},\kappa_{1}\left(p^{-2}\otimes1_{N}^{'}\right)\right]\right)\\\underline{\nu}&amp;=N+1
 \end{align}\]</span></p>
+<p>(The nature of Minnesota prior and explain the variables)</p>
 <p>Then the posterior distribution will be:</p>
 <p><span class="math display">\[\begin{align}
 p\left(A,\Sigma|Y,X\right)&amp;\propto\det\left(\Sigma\right)^{-\frac{T}{2}}\\&amp;\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(A-\hat{A}\right)'X'X\left(A-\hat{A}\right)\right]\right)\\&amp;\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(Y-X\hat{A}\right)'\left(Y-X\hat{A}\right)\right]\right)\\&amp;\times\det\left(\Sigma\right)^{-\frac{N+K+\underline{\nu}+1}{2}}\\&amp;\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\left(A-\underline{A}\right)'\underline{V}^{-1}\left(A-\underline{A}\right)\right]\right)\\&amp;\times\exp\left(-\frac{1}{2}tr\left[\Sigma^{-1}\underline{S}\right]\right)
@@ -439,6 +444,7 @@ p\left(A,\Sigma|Y,X\right)&amp;=p\left(A|Y,X,\Sigma\right)p\left(\Sigma|Y,X\righ
 <span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">apply</span>(posterior.draws<span class="sc">$</span>A.posterior, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, mean),<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The posterior mean of the matrices are close to an identity matrix and for the constant term, it is close to a zero vector. Hence, the estimation appears robust.</p>
+</section>
 </section>
 <section id="extended-model" class="level1">
 <h1>Extended model</h1>
@@ -684,11 +690,12 @@ Y|X,A,\Sigma&amp;\sim\mathcal{MN}_{T\times N}\left(XA,\Sigma,\text{diag}\left(\s
 <p><img src="index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<section id="references" class="level2 unnumbered">
-<h2 class="unnumbered anchored" data-anchor-id="references">References</h2>
-
-
+<p>The posterior mean of the matrices are close to an identity matrix and for the constant term, it is close to a zero vector. Hence, the estimation appears robust.</p>
 </section>
+<section id="references" class="level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+
+
 </section>
 
 </main> <!-- /main -->

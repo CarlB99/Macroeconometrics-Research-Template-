@@ -841,55 +841,9 @@ plot(rw_data[,1], type='l', ylim=c(min(rw_data), max(rw_data)), col='red', ylab=
 lines(rw_data[,2], col='blue', ylab='', xlab='')
 
 ```
-<<<<<<< HEAD
-=======
+
+
 The posterior mean of the matrices are close to an identity matrix and for the constant term, it is close to a zero vector. Hence, the estimation appears robust.
 
-# Extended model
-
-As I plan to include private consumption as variable, I will have to extend the model, as consumption is only tracked quarterly, so I will need to estimate the monthly values between the quarterly data. This extension can be represented:
-
-\begin{align}
-\tilde{y}_{t^{*}}&=A_{1}y_{t^{*}-1}+\epsilon_{t^{*}}\\\tilde{y}_{t^{*}+1}&=A_{1}\tilde{y}_{t^{*}}+\epsilon_{t^{*}+1}\\\epsilon_{t^{*}}&\sim N\left(0,\Sigma\right)
-\end{align}
-
-Then I have the kernels as:
-
-\begin{align}
-\exp\left(-\frac{1}{2}\left(\tilde{y}_{t^{*}}-A_{1}y_{t^{*}-1}\right)'\Sigma^{-1}\left(\tilde{y}_{t^{*}}-A_{1}y_{t^{*}-1}\right)\right)\\\exp\left(-\frac{1}{2}\left(A_{1}\tilde{y}_{t^{*}}-y_{t^{*}+1}\right)'\Sigma^{-1}\left(A_{1}\tilde{y}_{t^{*}}-y_{t^{*}+1}\right)\right)
-\end{align}
-
-Thus we have the extension's full conditional posterior for extension as:
-
-\begin{align}
-\tilde{y}_{t^{*}}&\sim N_{N}\left(\bar{\tilde{y}}_{t^{*}},\bar{V}_{t^{*}}\right)\\\bar{V}_{t^{*}}&=\left[\Sigma^{-1}+A'\Sigma^{-1}A\right]^{-1}\\\bar{\tilde{y}}_{t^{*}}&=\bar{V}_{t^{*}}\left[\Sigma^{-1}Ay_{t^{*}+1}+A'\Sigma^{-1}y_{t^{*}+1}\right]\\\tilde{y}_{t^{*}1}|\tilde{y}_{t^{*}2}&\sim N\left(\bar{\tilde{y}}_{t^{*}1},\bar{V}_{t^{*}1}\right)
-\end{align}
-
-Then the code will be changed by including the sampling of the missing $\tilde{y}_{t^{*}}$ in the Gibbs Sampler:
-
-For each $s\in\left\{ 1,...,S\right\})$	
-
-\begin{align}
-1)&\text{Sample }A^{\left(S\right)},\Sigma^{\left(S\right)}\sim p\left(A,\Sigma|Y,X,\tilde{y}^{\left(s-1\right)}\right)\\2)&\text{Sample }\tilde{y}^{\left(s\right)}\sim p\left(\tilde{y}|Y,X,A^{\left(S\right)},\Sigma^{\left(S\right)}\right)
-\end{align}
-
-Which yield: $A^{\left(S\right)},\Sigma^{\left(S\right)},\tilde{y}^{\left(s\right)}$
-
-The code is then as follows:
-
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
-#| results: hide
-
-### Extended model BVAR estimation - Not inserted as I am really not sure what is the correct way forward - ignore it:
-
-
-```
-
-
-# Bayesian VAR Forecasting
->>>>>>> d1c179d373f5ce83e8f34e385215fa059a6c7535
 
 # References {.unnumbered}
