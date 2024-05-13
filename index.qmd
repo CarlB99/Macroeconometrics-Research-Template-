@@ -294,7 +294,7 @@ E|X	\sim\mathcal{MN}_{T\times N}\left(0_{T\times N},\Sigma,I_{T}\right)
 
 Where $Y=T\times7$ matrix, $X=T\times\left(1+\left(7\times p\right)\right)$, $A=\left(1+\left(7\times p\right)\right)\times6$ matrix that has the relationships between the used variables and $E=T\times7$ matrix of error terms. $p=12$ which is the amount of lags for monthly data and in total I have 252 observations of monthly data.
 
-# Matrix version of model
+## Matrix version of model
 In matrix form, I have the model as with $N=7$ variables:
 
 \begin{gather}
@@ -307,7 +307,7 @@ E|X	\sim\mathcal{MN}_{T\times N}\left(0_{T\times N},\Sigma,I_{T}\right)
 
 Where $Y=T\times7$ matrix, $X=T\times\left(1+\left(7\times p\right)\right)$ matrix, $A=\left(1+\left(7\times p\right)\right)\times7$ matrix that has the relationships between the used variables and $E=T\times7$ matrix of error terms. p=12 which is the amount of lags for monthly data and in total I have 252 observations of monthly data.
 
-## Baseline model:
+# Baseline model:
 Then the likelihood function is given by:
 
 \begin{align}
@@ -321,12 +321,16 @@ The natural conjugate priors for A and \Sigma are then assumed to follow matrix-
 p\left(A,\Sigma\right)&=p\left(A|\Sigma\right)p\left(\Sigma\right)\\A|\Sigma&\sim\mathcal{MN}_{T\times N}\left(\underline{A},\Sigma,\underline{V}\right)\\\Sigma&\sim IW_{N}\left(\underline{S},\underline{\nu}\right)
   \end{align}
 
+## Minnesota prior
+(Some definition and backgrounds of Minnesota prior and why we use it)
 
 Which follow the Minnesota prior set as:
 
 \begin{align}
 \underline{A}&=\left[0_{N\times1},I_{N},0_{N\times\left(p-1\right)N}\right]'\\\underline{V}&=diag\left(\left[\kappa_{2},\kappa_{1}\left(p^{-2}\otimes1_{N}^{'}\right)\right]\right)\\\underline{\nu}&=N+1
 \end{align}
+
+(The nature of Minnesota prior and explain the variables)
 
 Then the posterior distribution will be:
 
@@ -480,7 +484,7 @@ lines(rw_data[,2], col='blue', ylab='', xlab='')
 ```
 The posterior mean of the matrices are close to an identity matrix and for the constant term, it is close to a zero vector. Hence, the estimation appears robust.
 
-## Extended model
+# Extended model
 
 As I plan to include private consumption as variable, I will have to extend the model, as consumption is only tracked quarterly, so I will need to estimate the monthly values between the quarterly data. This extension can be represented:
 
@@ -524,6 +528,6 @@ The code is then as follows:
 ```
 
 
-## Bayesian VAR Forecasting
+# Bayesian VAR Forecasting
 
-## References {.unnumbered}
+# References {.unnumbered}
