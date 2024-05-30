@@ -356,8 +356,7 @@ The baseline model can be estimated by:
 ```{r}
 #| echo: true
 #| message: false
-#| warning: false
-#| results: hide
+#| warning: false  
 
 ### Baseline model BVAR estimation:
 
@@ -470,7 +469,6 @@ Which can be estimated by:
 #| echo: true
 #| message: false
 #| warning: false
-#| results: hide
 
 ### Extended model BVAR estimation - Not inserted as extension will be switched
 
@@ -669,8 +667,7 @@ The aim is to forecast economic activity measured by industrial production two y
 ```{r}
 #| echo: false
 #| message: false
-#| warning: false
-#| result: hide
+#| warning: false  
 
 library(mvtnorm)
 library(MASS)
