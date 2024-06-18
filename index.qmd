@@ -364,7 +364,7 @@ The baseline model can be estimated by:
 N = ncol(Data[ , -1])
 p = 12
 K = 1+N*p
-S = 10000
+S = 5000
 set.seed(1)
 
 # Initializing X and Y matrices
@@ -505,7 +505,7 @@ Which can possibly be estimated by:
 N = ncol(Data[ , -1])
 p = 12
 K = 1+N*p
-S = 1000 # Using small sample as computations take extensive time
+S =  1000 # Using small sample as computations take extensive time
 set.seed(1)
 
 # Initializing X and Y matrices
@@ -564,8 +564,8 @@ compute_a_posterior = function(sbar2, Sigma,V,A){
 # BVAR function
 BVAR.extension = function(Y,X,priors,S){
   
-  A.posterior        = array(0.1, dim = c(K,N,sum(S)))
-  Sigma.posterior    = array(0.1,dim=c(N,N,sum(S)))
+  A.posterior        = array(0.0001, dim = c(K,N,sum(S))) # Cant run if I replace 0.0001 with NA
+  Sigma.posterior    = array(0.0001,dim=c(N,N,sum(S)))
   
   
   for (s in 1:sum(S)){
@@ -617,9 +617,7 @@ plot.ts(posterior.draws.extension$Sigma.posterior[1,1,1:sum(S)],col="#379683", x
 
 ```
 
-However, as shown by simulation (shown at the end of the report) the model extension is not working correctly as the model is not robust and A posterior is not calculated the correct way. Therefore, any forecast based on this extension is going to be severely lacking.
-
-AS the extension by itself is not currently working, I will not show any results from combining the extension with stochastic volatility
+However, as shown by simulation (shown at the end of the report) the model extension is not working completely correctly as the model is not wholly and A posterior is possibly not calculated the correct way.
 
 # Bayesian VAR Stochastic Volatility
 
@@ -649,7 +647,7 @@ Which can be estimated by:
 #| message: false
 #| warning: false
 
-### Extended model BVAR estimation - Not inserted as extension will be switched
+### SV model BVAR estimation 
 
 ### Stochastic volatility
 
@@ -734,7 +732,7 @@ SVcommon.Gibbs.iteration = function(aux, priors){
 N = ncol(Data[ , -1])
 p = 12
 K = 1+N*p
-S = 10000
+S = 5000
 h = 24
 set.seed(1)
 
@@ -836,6 +834,88 @@ posterior.draws.SV = BVAR.SV(Y=Y, X=X, priors=priors, S=S)
 
 ```
 
+# Bayesian VAR Stochastic Volatility with extension
+
+Finally I combine the extension with the stochastic volatility, which can be estimated by:
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+### SV model with extension
+
+### Extended BVAR with stochastic volatility
+
+S = 5000
+
+BVAR.SV.extension = function(Y,X,priors,S){
+  
+  aux <- list(
+    Y = Y, 
+    X = X,  
+    H = matrix(1,T,1), 
+    h0 = 0, 
+    sigma.v2 = 1,
+    s = matrix(1,T,1),
+    A = matrix(0, K, N), 
+    Sigma = diag(diag(matrix(1, N, N))),
+    sigma2 = matrix(1, T, 1) 
+  )
+  
+  A.posterior        = array(0.0001, dim = c(K,N,sum(S))) # Cant run with NA replacing 0.0001
+  Sigma.posterior    = array(0.0001,dim=c(N,N,sum(S))) # Cant run with NA replacing 0.0001
+  sigma2.posterior    = matrix(NA, nrow(Y), sum(S)) 
+  
+  
+  for (s in 1:sum(S)){
+    sbar2                = compute_sbar2(s2, Sigma.posterior[,,s],V.bar)
+    a_posterior          = compute_a_posterior(sbar2, Sigma.posterior[,,s],V.bar, A.posterior[,,s])
+    a.posterior          = rnorm(1, a_posterior, sqrt(sbar2))
+    a.posterior.store[s] = a.posterior
+    
+    # normal-inverse Wishart posterior parameters
+    V.bar.inv   = t(X)%*%diag(1/as.vector(aux$sigma2))%*%X + diag(1/diag(priors$V.prior))
+    V.bar       = solve(V.bar.inv)
+    A.bar       = V.bar%*%(t(X)%*%diag(1/as.vector(aux$sigma2))%*%Y + diag(1/diag(priors$V.prior))%*%priors$A.prior*a.posterior)
+    nu.bar      = nrow(Y) + priors$nu.prior
+    S.bar       = priors$S.prior + t(Y)%*%diag(1/as.vector(aux$sigma2))%*%Y + t(priors$A.prior*a.posterior)%*%diag(1/diag(priors$V.prior))%*%priors$A.prior*a.posterior - t(A.bar)%*%V.bar.inv%*%A.bar
+    S.bar.inv   = solve(S.bar)
+    
+    #posterior draws
+    Sigma.posterior.dist   = rWishart(1, df=nu.bar, Sigma=S.bar.inv)
+    Sigma.draw             = apply(Sigma.posterior.dist,3,solve)
+    Sigma.posterior[,,s]   = Sigma.draw
+    A.posterior[,,s]       = array(rnorm(prod(c(dim(A.bar),1))),c(dim(A.bar),1))
+    L                      = t(chol(V.bar))
+    A.posterior[,,s]       = A.bar + L%*%A.posterior[,,s]%*%chol(Sigma.posterior[,,s])
+    
+    
+    # Draw using stochastic volatility Gibbs common sampler
+    aux                   = SVcommon.Gibbs.iteration(aux, priors)
+    sigma2.posterior[,s]  = aux$sigma2
+    
+
+  }
+
+  posterior = list(
+    Sigma.posterior   = Sigma.posterior,
+    A.posterior       = A.posterior,
+    Sigma2.posterior  = sigma2.posterior
+  )
+  return(posterior)
+}
+
+# Applying BVAR function
+posterior.draws.SV.extension = BVAR.SV.extension(Y=Y, X=X, priors=priors, S=S)
+round(apply(posterior.draws.SV.extension$Sigma.posterior, 1:2, mean),3)
+round(apply(posterior.draws.SV.extension$A.posterior, 1:2, mean),3)
+
+
+```
+
+Interestingly enough, this model show signs of robustness. However, the first row of the A posterior matrix is obviously not correct.
+
 # Bayesian VAR Forecasting
 
 The aim is to forecast economic activity measured by industrial production two years into the future such that $h=24$. This is done for the baseline model, the extension and the stochastic volatility model, but as discussed previously, the forecast generated from the extension will not yield any insights.
@@ -852,7 +932,7 @@ The Baseline VAR model produces forecasts with notably high uncertainty with the
 
 # simulate draws from the predictive density
 h = 24 # 2 year ahead forecast
-S = 10000
+S = 5000
 Y.h         = array(NA,c(h,N,S))
 
 # sampling predictive density
@@ -916,7 +996,7 @@ The Extension VAR forecasts demonstrates the lacking robustness of the model, so
 
 # simulate draws from the predictive density
 h = 24 # 2 year ahead forecast
-S = 1000
+S =  1000
 Y.h         = array(NA,c(h,N,S))
 
 # sampling predictive density
@@ -968,7 +1048,7 @@ polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1
 
 ## Bayesian VAR SV forecasting
 
-Finally the stochastic volatility model exhibit significantly lower uncertainty compared to the baseline model with the general forecast predicting an increase in industrial production in the next two years.
+Then the stochastic volatility model exhibit significantly lower uncertainty compared to the baseline model with the general forecast predicting an increase in industrial production in the next two years.
 Therefore, opting to switch the volatility to stochastic volatility possibly yields more useful forecasts. 
 
 ```{r}
@@ -978,7 +1058,7 @@ Therefore, opting to switch the volatility to stochastic volatility possibly yie
 #| result: hide
 
 h = 24 # 2 year ahead forecast
-S = 10000
+S = 5000
 Y.h         = array(NA,c(h,N,S))
 
 
@@ -991,6 +1071,70 @@ for (s in 1:S){
     Y.h[i,,s]   = rmvnorm(1, mean = x.T%*%posterior.draws.SV$A.posterior[,,s], sigma=posterior.draws.SV$Sigma.posterior[,,s])
     x.Ti        = rbind(Y.h[i,,s],x.Ti[1:(p-1),])
   }
+}
+
+
+gdp.point.f    = apply(Y.h[,1,],1,mean) 
+gdp.interval.f = apply(Y.h[,1,],1,hdi,credMass=0.68)
+gdp.range      = range(y[,1],gdp.interval.f)
+
+
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| result: true
+
+blue      = "#05386B"
+green     = "#379683"
+green.rgb = col2rgb(green)
+shade     = rgb(green.rgb[1],green.rgb[2],green.rgb[3], alpha=120, maxColorValue=255)
+
+
+par(mfrow=c(1,1), mar=rep(3,4),cex.axis=1.5)
+plot(1:(length(y[,1])+h),c(y[,1],gdp.point.f), type="l", ylim=gdp.range, axes=FALSE, xlab="", ylab="", lwd=2, col=green)
+axis(1,c(1,61,205, nrow(y),nrow(y)+h),c("2003-01","2008-01","2020-01","2023-12",""), col=blue)
+axis(2,c(gdp.range[1],mean(gdp.range),gdp.range[2]),c("","GDP",""), col=blue)
+abline(v=nrow(y), col="black")
+text(x=253, y=4.8, srt=90, "2024-01")
+abline(v=nrow(y)+12, col="black")
+text(x=265, y=4.8, srt=90, "2025-01")
+abline(v=nrow(y)+24, col="black")
+text(x=277, y=4.8, srt=90, "2026-01")
+polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1]),
+        c(y[230,1],gdp.interval.f[1,],gdp.interval.f[2,24:1],y[230,1]),
+        col=shade, border=blue)
+
+```
+
+## Bayesian VAR SV extension forecasting
+
+Finally, the Bayesian VAR stochastic volatility model with the extension show a combination of the two previous forecast with exponential predicted growth in the coming two years if I choose to increase initial value of A and sigma posterior, which stem from the misspecified extension model. Otherwise the result is identical.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| result: hide
+
+### SV.extension model forecast
+# simulate draws from the predictive density
+h = 24 # 2 year ahead forecast
+S = 5000
+Y.h         = array(NA,c(h,N,S))
+
+# sampling predictive density
+for (s in 1:S){
+  x.Ti        = Y[(nrow(Y)-h+1):nrow(Y),]
+  x.Ti        = x.Ti[p:1,]
+  for (i in 1:h){
+    x.T         = c(1,as.vector(t(x.Ti)))
+    Y.h[i,,s]   = rmvnorm(1, mean = x.T%*%posterior.draws.SV.extension$A.posterior[,,s], sigma=posterior.draws.SV.extension$Sigma.posterior[,,s])
+    x.Ti        = rbind(Y.h[i,,s],x.Ti[1:(p-1),])
+  }
+  
 }
 
 
@@ -1044,7 +1188,7 @@ Now I aim to see the effect from disregarding the CISS variable in the forecasts
 N = ncol(Data[ , -c(1,3)])
 p = 12
 K = 1+N*p
-S = 10000
+S = 5000
 set.seed(1)
 
 # Initializing X and Y matrices
@@ -1077,7 +1221,7 @@ posterior.draws.no_finance = BVAR(Y=Y, X=X, priors=priors, S=S)
 
 # simulate draws from the predictive density
 h = 24 # 2 year ahead forecast
-S = 10000
+S =  5000
 Y.h         = array(NA,c(h,N,S))
 
 # sampling predictive density
@@ -1118,6 +1262,92 @@ polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1
 
 ```
 
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| result: true
+
+## No financial variable extended model
+# Setting specifications
+N = ncol(Data[ , -c(1,3)])
+p = 12
+K = 1+N*p
+S =  1000
+set.seed(1)
+
+# Initializing X and Y matrices
+y       = ts(Data[ , -c(1,3)], start=c(2003,1), frequency=12)
+Y       = ts(y[13:nrow(y),], start=c(2004,1), frequency=12)
+X       = matrix(1,nrow(Y),1)
+for (i in 1:p){
+  X     = cbind(X,y[13:nrow(y)-i,])
+}
+
+# Maximum Likelihood Estimator
+A.hat       = solve(t(X)%*%X)%*%t(X)%*%Y
+Sigma.hat   = t(Y-X%*%A.hat)%*%(Y-X%*%A.hat)/T
+
+# Setting Minnesota Prior
+kappa.1           = 0.02^2
+kappa.2           = 100
+A.prior           = matrix(0,nrow(A.hat),ncol(A.hat))
+A.prior[2:(N+1),] = diag(N)
+
+priors = list(
+  A.prior     = A.prior,
+  V.prior     = diag(c(kappa.2,kappa.1*((1:p)^(-2))%x%rep(1,N))),
+  S.prior     = diag(diag(Sigma.hat)),
+  nu.prior    = N+1 
+)
+
+# Applying BVAR function
+posterior.draws.extension.no_finance = BVAR.extension(Y=Y, X=X, priors=priors, S=S)
+
+# simulate draws from the predictive density
+h = 24 # 2 year ahead forecast
+S =  1000
+Y.h         = array(NA,c(h,N,S))
+
+# sampling predictive density
+for (s in 1:S){
+  x.Ti        = Y[(nrow(Y)-h+1):nrow(Y),]
+  x.Ti        = x.Ti[p:1,]
+  for (i in 1:h){
+    x.T         = c(1,as.vector(t(x.Ti)))
+    Y.h[i,,s]   = rmvnorm(1, mean = x.T%*%posterior.draws.extension.no_finance$A.posterior[,,s], sigma=posterior.draws.extension.no_finance$Sigma.posterior[,,s])
+    x.Ti        = rbind(Y.h[i,,s],x.Ti[1:(p-1),])
+  }
+}
+
+gdp.point.f    = apply(Y.h[,1,],1,mean) 
+gdp.interval.f = apply(Y.h[,1,],1,hdi,credMass=0.68)
+gdp.range      = range(y[,1],gdp.interval.f)
+
+blue      = "#05386B"
+green     = "#379683"
+green.rgb = col2rgb(green)
+shade     = rgb(green.rgb[1],green.rgb[2],green.rgb[3], alpha=120, maxColorValue=255)
+
+
+par(mfrow=c(1,1), mar=rep(3,4),cex.axis=1.5)
+plot(1:(length(y[,1])+h),c(y[,1],gdp.point.f), type="l", ylim=gdp.range, axes=FALSE, xlab="", ylab="", lwd=2, col=green)
+axis(1,c(1,61,205, nrow(y),nrow(y)+h),c("2003-01","2008-01","2020-01","2023-12",""), col=blue)
+axis(2,c(gdp.range[1],mean(gdp.range),gdp.range[2]),c("","GDP",""), col=blue)
+abline(v=nrow(y), col="black")
+text(x=253, y=4.8, srt=90, "2024-01")
+abline(v=nrow(y)+12, col="black")
+text(x=265, y=4.8, srt=90, "2025-01")
+abline(v=nrow(y)+24, col="black")
+text(x=277, y=4.8, srt=90, "2026-01")
+polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1]),
+        c(y[230,1],gdp.interval.f[1,],gdp.interval.f[2,24:1],y[230,1]),
+        col=shade, border=blue)
+
+
+```
+
+
 
 ```{r}
 #| echo: false
@@ -1130,7 +1360,7 @@ polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1
 N = ncol(Data[ , -c(1,3)])
 p = 12
 K = 1+N*p
-S = 10000
+S = 5000
 set.seed(1)
 
 # Initializing X and Y matrices
@@ -1176,7 +1406,7 @@ priors = list(
 posterior.draws.SV.no_finance = BVAR.SV(Y=Y, X=X, priors=priors, S=S)
 
 h = 24 # 2 year ahead forecast
-S = 10000
+S = 5000
 Y.h         = array(NA,c(h,N,S))
 
 # sampling predictive density
@@ -1218,11 +1448,62 @@ polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1
 
 ```
 
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| result: true
+
+# Applying BVAR function for SV extension model
+posterior.draws.SV.extension.no_finance = BVAR.SV.extension(Y=Y, X=X, priors=priors, S=S)
+
+h = 24 # 2 year ahead forecast
+S = 5000
+Y.h         = array(NA,c(h,N,S))
+
+# sampling predictive density
+for (s in 1:S){
+  x.Ti        = Y[(nrow(Y)-h+1):nrow(Y),]
+  x.Ti        = x.Ti[p:1,]
+  for (i in 1:h){
+    x.T         = c(1,as.vector(t(x.Ti)))
+    Y.h[i,,s]   = rmvnorm(1, mean = x.T%*%posterior.draws.SV.extension.no_finance$A.posterior[,,s], sigma=posterior.draws.SV.extension.no_finance$Sigma.posterior[,,s])
+    x.Ti        = rbind(Y.h[i,,s],x.Ti[1:(p-1),])
+  }
+  
+}
+
+
+gdp.point.f    = apply(Y.h[,1,],1,mean) 
+gdp.interval.f = apply(Y.h[,1,],1,hdi,credMass=0.68)
+gdp.range      = range(y[,1],gdp.interval.f)
+
+blue      = "#05386B"
+green     = "#379683"
+green.rgb = col2rgb(green)
+shade     = rgb(green.rgb[1],green.rgb[2],green.rgb[3], alpha=120, maxColorValue=255)
+
+
+par(mfrow=c(1,1), mar=rep(3,4),cex.axis=1.5)
+plot(1:(length(y[,1])+h),c(y[,1],gdp.point.f), type="l", ylim=gdp.range, axes=FALSE, xlab="", ylab="", lwd=2, col=green)
+axis(1,c(1,61,205, nrow(y),nrow(y)+h),c("2003-01","2008-01","2020-01","2023-12",""), col=blue)
+axis(2,c(gdp.range[1],mean(gdp.range),gdp.range[2]),c("","GDP",""), col=blue)
+abline(v=nrow(y), col="black")
+text(x=253, y=4.8, srt=90, "2024-01")
+abline(v=nrow(y)+12, col="black")
+text(x=265, y=4.8, srt=90, "2025-01")
+abline(v=nrow(y)+24, col="black")
+text(x=277, y=4.8, srt=90, "2026-01")
+polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1]),
+        c(y[230,1],gdp.interval.f[1,],gdp.interval.f[2,24:1],y[230,1]),
+        col=shade, border=blue)
+```
+
 The models without using the CISS variable does not provide any significant difference as compared to the previous forecasts including it, therefore the effects from financial stress in the euro area are possibly negligible for industrial production.
 
 # Conclusion:
 
-This research project aimed to analyze how Bayesian VAR models can be utilized to assess whether including financial variables have any predicting power for forecasting economic activity measured by industrial production but finds no results. Additionally the paper is currently lacking as the extension have to be finished and combined with stochastic volatility. Finally the forecasts only made usage of up to 7 variables due to the late change in model extension, so the amount of variables should be increased.
+This research project aimed to analyze how Bayesian VAR models can be utilized to assess whether including financial variables have any predicting power for forecasting economic activity measured by industrial production but finds no results. Additionally the paper is currently lacking as the extension have to be finished. Finally the forecasts only made usage of up to 7 variables due to the late change in model extension, so the amount of variables should be increased.
 
 # Showing models
 To demonstrate that the baseline model works, I generate a bivariate Gaussian random walk process with 1 lag:
@@ -1293,7 +1574,7 @@ The extended model does unfortunately not work, as demonstrated by the posterior
 p = 1
 N = 2
 K = 1+N*p
-S = 1000
+S =  1000
 
 # generate random walk processes
 rw.1    = cumsum(rnorm(1000,0,1))
@@ -1329,60 +1610,5 @@ round(apply(posterior.draws.extension.sim$A.posterior, 1:2, mean),3)
 
 ```
 
-While the stochastic volatility model does seem robust similar to the baseline model:
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-#| result: true
-
-### Showing SV model
-#Specifications
-p = 1
-N = 2
-K = 1+N*p
-S = 1000
-
-# generate random walk processes
-rw.1    = cumsum(rnorm(1000,0,1))
-rw.2    = cumsum(rnorm(1000,0,1))
-y       = matrix(cbind(rw.1,rw.2),nrow=1000,ncol=N)
-
-# Set X and Y matrices
-Y       = ts(y[2:nrow(y),])
-X       = matrix(1,nrow(Y),1)
-X       = cbind(X,y[1:nrow(y)-p,])
-
-# MLE
-A.hat       = solve(t(X)%*%X)%*%t(X)%*%Y
-Sigma.hat   = t(Y-X%*%A.hat)%*%(Y-X%*%A.hat)/nrow(Y)
-
-# Minnesota prior
-kappa.1           = 0.02^2
-kappa.2           = 100
-A.prior           = matrix(0,nrow(A.hat),ncol(A.hat))
-A.prior[2:(N+1),] = diag(N)
-
-priors = list(
-  A.prior     = A.prior,
-  V.prior     = diag(c(kappa.2,kappa.1*((1:p)^(-2))%x%rep(1,N))),
-  S.prior     = diag(diag(Sigma.hat)),
-  nu.prior    = N+1,
-  
-  # New priors based on lectures
-  h0.v        = 1,
-  h0.m        = 0,
-  sigmav.s    = 1,
-  sigmav.nu   = 1, 
-  HH          = HH 
-)
-
-# Demonstration
-posterior.draws.extension.sim = BVAR.extension(Y=Y, X=X, priors=priors, S=S)
-round(apply(posterior.draws.SV$Sigma.posterior, 1:2, mean),3)
-round(apply(posterior.draws.SV$A.posterior, 1:2, mean),3)
-
-```
 
 # References {.unnumbered}

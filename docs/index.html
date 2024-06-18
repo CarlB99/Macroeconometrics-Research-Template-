@@ -165,11 +165,13 @@ div.csl-indent {
   </ul></li>
   <li><a href="#extended-model" id="toc-extended-model" class="nav-link" data-scroll-target="#extended-model">Extended model</a></li>
   <li><a href="#bayesian-var-stochastic-volatility" id="toc-bayesian-var-stochastic-volatility" class="nav-link" data-scroll-target="#bayesian-var-stochastic-volatility">Bayesian VAR Stochastic Volatility</a></li>
+  <li><a href="#bayesian-var-stochastic-volatility-with-extension" id="toc-bayesian-var-stochastic-volatility-with-extension" class="nav-link" data-scroll-target="#bayesian-var-stochastic-volatility-with-extension">Bayesian VAR Stochastic Volatility with extension</a></li>
   <li><a href="#bayesian-var-forecasting" id="toc-bayesian-var-forecasting" class="nav-link" data-scroll-target="#bayesian-var-forecasting">Bayesian VAR Forecasting</a>
   <ul class="collapse">
   <li><a href="#bayesian-var-baseline-model-forecast" id="toc-bayesian-var-baseline-model-forecast" class="nav-link" data-scroll-target="#bayesian-var-baseline-model-forecast">Bayesian VAR Baseline model forecast</a></li>
   <li><a href="#bayesian-var-extension-forecasting" id="toc-bayesian-var-extension-forecasting" class="nav-link" data-scroll-target="#bayesian-var-extension-forecasting">Bayesian VAR Extension forecasting</a></li>
   <li><a href="#bayesian-var-sv-forecasting" id="toc-bayesian-var-sv-forecasting" class="nav-link" data-scroll-target="#bayesian-var-sv-forecasting">Bayesian VAR SV forecasting</a></li>
+  <li><a href="#bayesian-var-sv-extension-forecasting" id="toc-bayesian-var-sv-extension-forecasting" class="nav-link" data-scroll-target="#bayesian-var-sv-extension-forecasting">Bayesian VAR SV extension forecasting</a></li>
   <li><a href="#forecasts-without-using-ciss-variable" id="toc-forecasts-without-using-ciss-variable" class="nav-link" data-scroll-target="#forecasts-without-using-ciss-variable">Forecasts without using CISS variable</a></li>
   </ul></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion:</a></li>
@@ -399,7 +401,7 @@ p\left(A,\Sigma|Y,X\right)&amp;=p\left(A|Y,X,\Sigma\right)p\left(\Sigma|Y,X\righ
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>N <span class="ot">=</span> <span class="fu">ncol</span>(Data[ , <span class="sc">-</span><span class="dv">1</span>])</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>p <span class="ot">=</span> <span class="dv">12</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>K <span class="ot">=</span> <span class="dv">1</span><span class="sc">+</span>N<span class="sc">*</span>p</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>S <span class="ot">=</span> <span class="dv">10000</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>S <span class="ot">=</span> <span class="dv">5000</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Initializing X and Y matrices</span></span>
@@ -522,7 +524,7 @@ A_{1,NN}|\Sigma,\underline{a}_{i},\underline{V}\sim N\left(\underline{a}_{i},\Si
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>N <span class="ot">=</span> <span class="fu">ncol</span>(Data[ , <span class="sc">-</span><span class="dv">1</span>])</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>p <span class="ot">=</span> <span class="dv">12</span></span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>K <span class="ot">=</span> <span class="dv">1</span><span class="sc">+</span>N<span class="sc">*</span>p</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>S <span class="ot">=</span> <span class="dv">1000</span> <span class="co"># Using small sample as computations take extensive time</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>S <span class="ot">=</span>  <span class="dv">1000</span> <span class="co"># Using small sample as computations take extensive time</span></span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Initializing X and Y matrices</span></span>
@@ -581,8 +583,8 @@ A_{1,NN}|\Sigma,\underline{a}_{i},\underline{V}\sim N\left(\underline{a}_{i},\Si
 <span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="co"># BVAR function</span></span>
 <span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>BVAR.extension <span class="ot">=</span> <span class="cf">function</span>(Y,X,priors,S){</span>
 <span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>  A.posterior        <span class="ot">=</span> <span class="fu">array</span>(<span class="fl">0.1</span>, <span class="at">dim =</span> <span class="fu">c</span>(K,N,<span class="fu">sum</span>(S)))</span>
-<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>  Sigma.posterior    <span class="ot">=</span> <span class="fu">array</span>(<span class="fl">0.1</span>,<span class="at">dim=</span><span class="fu">c</span>(N,N,<span class="fu">sum</span>(S)))</span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>  A.posterior        <span class="ot">=</span> <span class="fu">array</span>(<span class="fl">0.0001</span>, <span class="at">dim =</span> <span class="fu">c</span>(K,N,<span class="fu">sum</span>(S))) <span class="co"># Cant run if I replace 0.0001 with NA</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>  Sigma.posterior    <span class="ot">=</span> <span class="fu">array</span>(<span class="fl">0.0001</span>,<span class="at">dim=</span><span class="fu">c</span>(N,N,<span class="fu">sum</span>(S)))</span>
 <span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (s <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">sum</span>(S)){</span>
@@ -632,8 +634,7 @@ A_{1,NN}|\Sigma,\underline{a}_{i},\underline{V}\sim N\left(\underline{a}_{i},\Si
 <p><img src="index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>However, as shown by simulation (shown at the end of the report) the model extension is not working correctly as the model is not robust and A posterior is not calculated the correct way. Therefore, any forecast based on this extension is going to be severely lacking.</p>
-<p>AS the extension by itself is not currently working, I will not show any results from combining the extension with stochastic volatility</p>
+<p>However, as shown by simulation (shown at the end of the report) the model extension is not working completely correctly as the model is not wholly and A posterior is possibly not calculated the correct way.</p>
 </section>
 <section id="bayesian-var-stochastic-volatility" class="level1">
 <h1>Bayesian VAR Stochastic Volatility</h1>
@@ -651,7 +652,7 @@ p\left(A,\Sigma|Y,X\right)&amp;=MN\left(\overline{A},\overline{V},\overline{S},\
 \end{align}\]</span></p>
 <p>Which can be estimated by:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Extended model BVAR estimation - Not inserted as extension will be switched</span></span>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="do">### SV model BVAR estimation </span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="do">### Stochastic volatility</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -736,7 +737,7 @@ p\left(A,\Sigma|Y,X\right)&amp;=MN\left(\overline{A},\overline{V},\overline{S},\
 <span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>N <span class="ot">=</span> <span class="fu">ncol</span>(Data[ , <span class="sc">-</span><span class="dv">1</span>])</span>
 <span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>p <span class="ot">=</span> <span class="dv">12</span></span>
 <span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>K <span class="ot">=</span> <span class="dv">1</span><span class="sc">+</span>N<span class="sc">*</span>p</span>
-<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>S <span class="ot">=</span> <span class="dv">10000</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>S <span class="ot">=</span> <span class="dv">5000</span></span>
 <span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>h <span class="ot">=</span> <span class="dv">24</span></span>
 <span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
 <span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a></span>
@@ -836,93 +837,76 @@ p\left(A,\Sigma|Y,X\right)&amp;=MN\left(\overline{A},\overline{V},\overline{S},\
 <span id="cb3-183"><a href="#cb3-183" aria-hidden="true" tabindex="-1"></a>posterior.draws.SV <span class="ot">=</span> <span class="fu">BVAR.SV</span>(<span class="at">Y=</span>Y, <span class="at">X=</span>X, <span class="at">priors=</span>priors, <span class="at">S=</span>S)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="bayesian-var-forecasting" class="level1">
-<h1>Bayesian VAR Forecasting</h1>
-<p>The aim is to forecast economic activity measured by industrial production two years into the future such that <span class="math inline">\(h=24\)</span>. This is done for the baseline model, the extension and the stochastic volatility model, but as discussed previously, the forecast generated from the extension will not yield any insights.</p>
-<p>Additionally based on the argument from <span class="citation" data-cites="sims1999error">Sims and Zha (<a href="#ref-sims1999error" role="doc-biblioref">1999</a>)</span> considering the usage 68<span class="math inline">\(\%\)</span> or 95<span class="math inline">\(\%\)</span> confidence bands for the forecasts, I follow their approach suggesting that 68<span class="math inline">\(/%\)</span> confidence bands can be more useful than more than the 95<span class="math inline">\(\%\)</span> confidence band.</p>
-<section id="bayesian-var-baseline-model-forecast" class="level2">
-<h2 class="anchored" data-anchor-id="bayesian-var-baseline-model-forecast">Bayesian VAR Baseline model forecast</h2>
-<p>The Baseline VAR model produces forecasts with notably high uncertainty with the mean prediction suggesting the economic activity for industrial production is possibly decreasing marginally in the next two years.</p>
-<div class="cell" data-result="true">
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-</section>
-<section id="bayesian-var-extension-forecasting" class="level2">
-<h2 class="anchored" data-anchor-id="bayesian-var-extension-forecasting">Bayesian VAR Extension forecasting</h2>
-<p>The Extension VAR forecasts demonstrates the lacking robustness of the model, so will have to be fixed to yield any usefulness.</p>
-<div class="cell" data-result="true">
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-</section>
-<section id="bayesian-var-sv-forecasting" class="level2">
-<h2 class="anchored" data-anchor-id="bayesian-var-sv-forecasting">Bayesian VAR SV forecasting</h2>
-<p>Finally the stochastic volatility model exhibit significantly lower uncertainty compared to the baseline model with the general forecast predicting an increase in industrial production in the next two years. Therefore, opting to switch the volatility to stochastic volatility possibly yields more useful forecasts.</p>
-<div class="cell" data-result="true">
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-</section>
-<section id="forecasts-without-using-ciss-variable" class="level2">
-<h2 class="anchored" data-anchor-id="forecasts-without-using-ciss-variable">Forecasts without using CISS variable</h2>
-<p>Now I aim to see the effect from disregarding the CISS variable in the forecasts, which described financial stress in the euro area. It could be considered to also remove the MRO or possibly M2 variable from these forecasts, due to their financial implications, but I opt not to do so in this paper.</p>
-<div class="cell" data-result="true">
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<div class="cell" data-result="true">
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>The models without using the CISS variable does not provide any significant difference as compared to the previous forecasts including it, therefore the effects from financial stress in the euro area are possibly negligible for industrial production.</p>
-</section>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion:</h1>
-<p>This research project aimed to analyze how Bayesian VAR models can be utilized to assess whether including financial variables have any predicting power for forecasting economic activity measured by industrial production but finds no results. Additionally the paper is currently lacking as the extension have to be finished and combined with stochastic volatility. Finally the forecasts only made usage of up to 7 variables due to the late change in model extension, so the amount of variables should be increased.</p>
-</section>
-<section id="showing-models" class="level1">
-<h1>Showing models</h1>
-<p>To demonstrate that the baseline model works, I generate a bivariate Gaussian random walk process with 1 lag:</p>
-<div class="cell" data-result="true">
-<div class="cell-output cell-output-stdout">
-<pre><code>       [,1]   [,2]
-[1,]  1.000 -0.003
-[2,] -0.003  0.992</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       [,1]  [,2]
-[1,] -0.214 0.110
-[2,]  0.989 0.005
-[3,]  0.003 0.998</code></pre>
-</div>
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>The posterior mean of the matrices are close to an identity matrix and for the constant term, it is close to a zero vector. Hence, the estimation appears robust.</p>
-<p>The extended model does unfortunately not work, as demonstrated by the posterior mean of the matrices not being close an identity matrix and the constant term is not close enough to be assumed zero vector. Therefore, the model is not robust, as seen below:</p>
-<div class="cell" data-result="true">
-<div class="cell-output cell-output-stdout">
-<pre><code>      [,1]  [,2]
-[1,] 2.191 0.065
-[2,] 0.065 2.295</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       [,1]   [,2]
-[1,]  0.014 -0.002
-[2,]  0.006  0.007
-[3,] -0.039 -0.016</code></pre>
-</div>
-</div>
-<p>While the stochastic volatility model does seem robust similar to the baseline model:</p>
-<div class="cell" data-result="true">
+<section id="bayesian-var-stochastic-volatility-with-extension" class="level1">
+<h1>Bayesian VAR Stochastic Volatility with extension</h1>
+<p>Finally I combine the extension with the stochastic volatility, which can be estimated by:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="do">### SV model with extension</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="do">### Extended BVAR with stochastic volatility</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>S <span class="ot">=</span> <span class="dv">5000</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>BVAR.SV.extension <span class="ot">=</span> <span class="cf">function</span>(Y,X,priors,S){</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  aux <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">Y =</span> Y, </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">X =</span> X,  </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">H =</span> <span class="fu">matrix</span>(<span class="dv">1</span>,T,<span class="dv">1</span>), </span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">h0 =</span> <span class="dv">0</span>, </span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">sigma.v2 =</span> <span class="dv">1</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">s =</span> <span class="fu">matrix</span>(<span class="dv">1</span>,T,<span class="dv">1</span>),</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">A =</span> <span class="fu">matrix</span>(<span class="dv">0</span>, K, N), </span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sigma =</span> <span class="fu">diag</span>(<span class="fu">diag</span>(<span class="fu">matrix</span>(<span class="dv">1</span>, N, N))),</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">sigma2 =</span> <span class="fu">matrix</span>(<span class="dv">1</span>, T, <span class="dv">1</span>) </span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  A.posterior        <span class="ot">=</span> <span class="fu">array</span>(<span class="fl">0.0001</span>, <span class="at">dim =</span> <span class="fu">c</span>(K,N,<span class="fu">sum</span>(S))) <span class="co"># Cant run with NA replacing 0.0001</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  Sigma.posterior    <span class="ot">=</span> <span class="fu">array</span>(<span class="fl">0.0001</span>,<span class="at">dim=</span><span class="fu">c</span>(N,N,<span class="fu">sum</span>(S))) <span class="co"># Cant run with NA replacing 0.0001</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  sigma2.posterior    <span class="ot">=</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="fu">nrow</span>(Y), <span class="fu">sum</span>(S)) </span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (s <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">sum</span>(S)){</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    sbar2                <span class="ot">=</span> <span class="fu">compute_sbar2</span>(s2, Sigma.posterior[,,s],V.bar)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    a_posterior          <span class="ot">=</span> <span class="fu">compute_a_posterior</span>(sbar2, Sigma.posterior[,,s],V.bar, A.posterior[,,s])</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    a.posterior          <span class="ot">=</span> <span class="fu">rnorm</span>(<span class="dv">1</span>, a_posterior, <span class="fu">sqrt</span>(sbar2))</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    a.posterior.store[s] <span class="ot">=</span> a.posterior</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># normal-inverse Wishart posterior parameters</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    V.bar.inv   <span class="ot">=</span> <span class="fu">t</span>(X)<span class="sc">%*%</span><span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">as.vector</span>(aux<span class="sc">$</span>sigma2))<span class="sc">%*%</span>X <span class="sc">+</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">diag</span>(priors<span class="sc">$</span>V.prior))</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    V.bar       <span class="ot">=</span> <span class="fu">solve</span>(V.bar.inv)</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    A.bar       <span class="ot">=</span> V.bar<span class="sc">%*%</span>(<span class="fu">t</span>(X)<span class="sc">%*%</span><span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">as.vector</span>(aux<span class="sc">$</span>sigma2))<span class="sc">%*%</span>Y <span class="sc">+</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">diag</span>(priors<span class="sc">$</span>V.prior))<span class="sc">%*%</span>priors<span class="sc">$</span>A.prior<span class="sc">*</span>a.posterior)</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>    nu.bar      <span class="ot">=</span> <span class="fu">nrow</span>(Y) <span class="sc">+</span> priors<span class="sc">$</span>nu.prior</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>    S.bar       <span class="ot">=</span> priors<span class="sc">$</span>S.prior <span class="sc">+</span> <span class="fu">t</span>(Y)<span class="sc">%*%</span><span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">as.vector</span>(aux<span class="sc">$</span>sigma2))<span class="sc">%*%</span>Y <span class="sc">+</span> <span class="fu">t</span>(priors<span class="sc">$</span>A.prior<span class="sc">*</span>a.posterior)<span class="sc">%*%</span><span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">diag</span>(priors<span class="sc">$</span>V.prior))<span class="sc">%*%</span>priors<span class="sc">$</span>A.prior<span class="sc">*</span>a.posterior <span class="sc">-</span> <span class="fu">t</span>(A.bar)<span class="sc">%*%</span>V.bar.inv<span class="sc">%*%</span>A.bar</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    S.bar.inv   <span class="ot">=</span> <span class="fu">solve</span>(S.bar)</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>    <span class="co">#posterior draws</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    Sigma.posterior.dist   <span class="ot">=</span> <span class="fu">rWishart</span>(<span class="dv">1</span>, <span class="at">df=</span>nu.bar, <span class="at">Sigma=</span>S.bar.inv)</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    Sigma.draw             <span class="ot">=</span> <span class="fu">apply</span>(Sigma.posterior.dist,<span class="dv">3</span>,solve)</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    Sigma.posterior[,,s]   <span class="ot">=</span> Sigma.draw</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    A.posterior[,,s]       <span class="ot">=</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="fu">prod</span>(<span class="fu">c</span>(<span class="fu">dim</span>(A.bar),<span class="dv">1</span>))),<span class="fu">c</span>(<span class="fu">dim</span>(A.bar),<span class="dv">1</span>))</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>    L                      <span class="ot">=</span> <span class="fu">t</span>(<span class="fu">chol</span>(V.bar))</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    A.posterior[,,s]       <span class="ot">=</span> A.bar <span class="sc">+</span> L<span class="sc">%*%</span>A.posterior[,,s]<span class="sc">%*%</span><span class="fu">chol</span>(Sigma.posterior[,,s])</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Draw using stochastic volatility Gibbs common sampler</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>    aux                   <span class="ot">=</span> <span class="fu">SVcommon.Gibbs.iteration</span>(aux, priors)</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>    sigma2.posterior[,s]  <span class="ot">=</span> aux<span class="sc">$</span>sigma2</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>  posterior <span class="ot">=</span> <span class="fu">list</span>(</span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sigma.posterior   =</span> Sigma.posterior,</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">A.posterior       =</span> A.posterior,</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sigma2.posterior  =</span> sigma2.posterior</span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(posterior)</span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a><span class="co"># Applying BVAR function</span></span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a>posterior.draws.SV.extension <span class="ot">=</span> <span class="fu">BVAR.SV.extension</span>(<span class="at">Y=</span>Y, <span class="at">X=</span>X, <span class="at">priors=</span>priors, <span class="at">S=</span>S)</span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">apply</span>(posterior.draws.SV.extension<span class="sc">$</span>Sigma.posterior, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, mean),<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     [,1] [,2] [,3] [,4] [,5] [,6] [,7]
 [1,]    0    0    0    0    0    0    0
@@ -933,9 +917,10 @@ p\left(A,\Sigma|Y,X\right)&amp;=MN\left(\overline{A},\overline{V},\overline{S},\
 [6,]    0    0    0    0    0    0    0
 [7,]    0    0    0    0    0    0    0</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">apply</span>(posterior.draws.SV.extension<span class="sc">$</span>A.posterior, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, mean),<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       [,1]   [,2]  [,3]   [,4]  [,5]  [,6]  [,7]
- [1,] 0.001 -0.004 0.002 -0.011 0.004 0.008 0.002
+ [1,] 0.001 -0.005 0.001 -0.012 0.003 0.008 0.001
  [2,] 1.000  0.000 0.000  0.000 0.000 0.000 0.000
  [3,] 0.000  1.000 0.000  0.000 0.000 0.000 0.000
  [4,] 0.000  0.000 1.000  0.000 0.000 0.000 0.000
@@ -1020,6 +1005,112 @@ p\left(A,\Sigma|Y,X\right)&amp;=MN\left(\overline{A},\overline{V},\overline{S},\
 [83,] 0.000  0.000 0.000  0.000 0.000 0.000 0.000
 [84,] 0.000  0.000 0.000  0.000 0.000 0.000 0.000
 [85,] 0.000  0.000 0.000  0.000 0.000 0.000 0.000</code></pre>
+</div>
+</div>
+<p>Interestingly enough, this model show signs of robustness. However, the first row of the A posterior matrix is obviously not correct.</p>
+</section>
+<section id="bayesian-var-forecasting" class="level1">
+<h1>Bayesian VAR Forecasting</h1>
+<p>The aim is to forecast economic activity measured by industrial production two years into the future such that <span class="math inline">\(h=24\)</span>. This is done for the baseline model, the extension and the stochastic volatility model, but as discussed previously, the forecast generated from the extension will not yield any insights.</p>
+<p>Additionally based on the argument from <span class="citation" data-cites="sims1999error">Sims and Zha (<a href="#ref-sims1999error" role="doc-biblioref">1999</a>)</span> considering the usage 68<span class="math inline">\(\%\)</span> or 95<span class="math inline">\(\%\)</span> confidence bands for the forecasts, I follow their approach suggesting that 68<span class="math inline">\(/%\)</span> confidence bands can be more useful than more than the 95<span class="math inline">\(\%\)</span> confidence band.</p>
+<section id="bayesian-var-baseline-model-forecast" class="level2">
+<h2 class="anchored" data-anchor-id="bayesian-var-baseline-model-forecast">Bayesian VAR Baseline model forecast</h2>
+<p>The Baseline VAR model produces forecasts with notably high uncertainty with the mean prediction suggesting the economic activity for industrial production is possibly decreasing marginally in the next two years.</p>
+<div class="cell" data-result="true">
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="bayesian-var-extension-forecasting" class="level2">
+<h2 class="anchored" data-anchor-id="bayesian-var-extension-forecasting">Bayesian VAR Extension forecasting</h2>
+<p>The Extension VAR forecasts demonstrates the lacking robustness of the model, so will have to be fixed to yield any usefulness.</p>
+<div class="cell" data-result="true">
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="bayesian-var-sv-forecasting" class="level2">
+<h2 class="anchored" data-anchor-id="bayesian-var-sv-forecasting">Bayesian VAR SV forecasting</h2>
+<p>Then the stochastic volatility model exhibit significantly lower uncertainty compared to the baseline model with the general forecast predicting an increase in industrial production in the next two years. Therefore, opting to switch the volatility to stochastic volatility possibly yields more useful forecasts.</p>
+<div class="cell" data-result="true">
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="bayesian-var-sv-extension-forecasting" class="level2">
+<h2 class="anchored" data-anchor-id="bayesian-var-sv-extension-forecasting">Bayesian VAR SV extension forecasting</h2>
+<p>Finally, the Bayesian VAR stochastic volatility model with the extension show a combination of the two previous forecast with exponential predicted growth in the coming two years if I choose to increase initial value of A and sigma posterior, which stem from the misspecified extension model. Otherwise the result is identical.</p>
+<div class="cell" data-result="true">
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="forecasts-without-using-ciss-variable" class="level2">
+<h2 class="anchored" data-anchor-id="forecasts-without-using-ciss-variable">Forecasts without using CISS variable</h2>
+<p>Now I aim to see the effect from disregarding the CISS variable in the forecasts, which described financial stress in the euro area. It could be considered to also remove the MRO or possibly M2 variable from these forecasts, due to their financial implications, but I opt not to do so in this paper.</p>
+<div class="cell" data-result="true">
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell" data-result="true">
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell" data-result="true">
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell" data-result="true">
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The models without using the CISS variable does not provide any significant difference as compared to the previous forecasts including it, therefore the effects from financial stress in the euro area are possibly negligible for industrial production.</p>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion:</h1>
+<p>This research project aimed to analyze how Bayesian VAR models can be utilized to assess whether including financial variables have any predicting power for forecasting economic activity measured by industrial production but finds no results. Additionally the paper is currently lacking as the extension have to be finished. Finally the forecasts only made usage of up to 7 variables due to the late change in model extension, so the amount of variables should be increased.</p>
+</section>
+<section id="showing-models" class="level1">
+<h1>Showing models</h1>
+<p>To demonstrate that the baseline model works, I generate a bivariate Gaussian random walk process with 1 lag:</p>
+<div class="cell" data-result="true">
+<div class="cell-output cell-output-stdout">
+<pre><code>      [,1]  [,2]
+[1,] 0.963 0.035
+[2,] 0.035 0.988</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       [,1]  [,2]
+[1,] -0.100 0.071
+[2,]  0.993 0.001
+[3,] -0.001 0.999</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The posterior mean of the matrices are close to an identity matrix and for the constant term, it is close to a zero vector. Hence, the estimation appears robust.</p>
+<p>The extended model does unfortunately not work, as demonstrated by the posterior mean of the matrices not being close an identity matrix and the constant term is not close enough to be assumed zero vector. Therefore, the model is not robust, as seen below:</p>
+<div class="cell" data-result="true">
+<div class="cell-output cell-output-stdout">
+<pre><code>       [,1]   [,2]
+[1,]  1.884 -0.023
+[2,] -0.023  1.965</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       [,1]   [,2]
+[1,] -0.016  0.029
+[2,]  0.046 -0.008
+[3,] -0.058 -0.008</code></pre>
 </div>
 </div>
 </section>
