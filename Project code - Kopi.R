@@ -22,9 +22,9 @@ end_date_m <- "2023-12"
 
 # Define the datasets
 series_info <- list(
-  ip = "STS.M.I8.Y.PROD.NS0010.4.000",
-  ciss = "CISS.M.U2.Z0Z.4F.EC.SOV_EW.IDX",
   hicp = "ICP.M.U2.Y.000000.3.INX",
+  ciss = "CISS.M.U2.Z0Z.4F.EC.SOV_EW.IDX",
+  ip = "STS.M.I8.Y.PROD.NS0010.4.000",
   un = "LFSI.M.I9.S.UNEHRT.TOTAL0.15_74.T",
   m2 = "BSI.M.U2.Y.V.M20.X.1.U2.2300.Z01.E"
 )
@@ -79,7 +79,8 @@ Data$obstime <- as.Date(paste0(Data$obstime, "-01"))
 # Appending data
 Data <- Data |>
   left_join(mro, by = "obstime") |>
-  left_join(consumption, by = "obstime")
+  left_join(consumption, by = "obstime") |>
+  dplyr::select(obstime, ip, everything())
 
 # Define the plot configurations
 plot_settings <- list(
@@ -152,7 +153,7 @@ knitr::kable(adf_results, digits = 3, align = 'c')
 N = ncol(Data[ , -1])
 p = 12
 K = 1+N*p
-S = 10000
+S = 5000
 set.seed(1)
 
 # Initializing X and Y matrices
@@ -162,6 +163,7 @@ X       = matrix(1,nrow(Y),1)
 for (i in 1:p){
   X     = cbind(X,y[13:nrow(y)-i,])
 }
+
 
 # Maximum Likelihood Estimator
 A.hat       = solve(t(X)%*%X)%*%t(X)%*%Y
@@ -221,7 +223,6 @@ plot.ts(posterior.draws$Sigma.posterior[2,1,1:sum(S)],col="#379683", xlab="Itera
 hist(posterior.draws$Sigma.posterior[1,1,1:sum(S)], col="#379683", xlab="Value of A", ylab="Frequency", main="Histogram of draws of A")
 plot.ts(posterior.draws$Sigma.posterior[1,1,1:sum(S)],col="#379683", xlab="Iteration s", ylab=NULL, main="Plot of posterior draws of A")
 
-
 ### Showing baseline model
 # Specifications
 # p = 1
@@ -270,7 +271,7 @@ plot.ts(posterior.draws$Sigma.posterior[1,1,1:sum(S)],col="#379683", xlab="Itera
 N = ncol(Data[ , -1])
 p = 12
 K = 1+N*p
-S = 1000
+S = 5000
 set.seed(1)
 
 # Initializing X and Y matrices
@@ -301,10 +302,6 @@ priors = list(
 m_a = 1
 s2  = 0.1
 
-a.posterior.store = numeric(S)
-Sigma.posterior   = rWishart(1, df=priors$nu.prior, Sigma=priors$S.prior)[,,1]
-V.bar             = priors$V.prior
-A.posterior       = priors$A.prior
 
 # Posterior of underline a:
 
@@ -326,44 +323,44 @@ compute_a_posterior = function(sbar2, Sigma,V,A){
   return(sbar2*a_posterior)
 }
 
+a.posterior.store = numeric(S)
+Sigma.posterior   <- rWishart(1, df=priors$nu.prior, Sigma=priors$S.prior)[,,1]
+V.bar = priors$V.prior
+A.posterior = priors$A.prior
+
+
 # BVAR function
+
+Sigma.posterior.store    <- array(NA, c(N,N,S))
+A.posterior.store        <- array(NA, c((1+p*N),N,S))
+
 BVAR.extension = function(Y,X,priors,S){
   
-  A.posterior        = array(0.1, dim = c(K,N,sum(S)))
-  Sigma.posterior    = array(0.1,dim=c(N,N,sum(S)))
-  
-  # Create progress bar
-  pb <- txtProgressBar(min = 0, max = sum(S), style = 3)
-  
   for (s in 1:sum(S)){
-    sbar2                = compute_sbar2(s2, Sigma.posterior[,,s],V.bar)
-    a_posterior          = compute_a_posterior(sbar2, Sigma.posterior[,,s],V.bar, A.posterior[,,s])
-    a.posterior          = rnorm(1, a_posterior, sqrt(sbar2))
-    a.posterior.store[s] = a.posterior
-    
-    # normal-inverse Wishart posterior parameters
-    V.bar.inv   = t(X)%*%X + diag(1/diag(priors$V.prior))
-    V.bar       = solve(V.bar.inv)
-    A.bar       = V.bar%*%(t(X)%*%Y + diag(1/diag(priors$V.prior))%*%priors$A.prior*a.posterior)
-    nu.bar      = nrow(Y) + priors$nu.prior
-    S.bar       = priors$S.prior + t(Y)%*%Y + t(priors$A.prior*a.posterior)%*%diag(1/diag(priors$V.prior))%*%priors$A.prior*a.posterior - t(A.bar)%*%V.bar.inv%*%A.bar
-    S.bar.inv   = solve(S.bar)
-    
-    #posterior draws
-    Sigma.posterior   = rWishart(sum(S), df=nu.bar, Sigma=S.bar.inv)
-    Sigma.posterior   = apply(Sigma.posterior,3,solve)
-    Sigma.posterior   = array(Sigma.posterior,c(N,N,sum(S)))
-      A.posterior       = array(rnorm(prod(c(dim(A.bar),sum(S)))),c(dim(A.bar),sum(S)))
-    L                 = t(chol(V.bar))
-    
-    A.posterior[,,s]= A.bar + L%*%A.posterior[,,s]%*%chol(Sigma.posterior[,,s])
+  sbar2                = compute_sbar2(s2, Sigma.posterior.store[,,s],V.bar)
+  a_posterior          = compute_a_posterior(sbar2, Sigma.posterior.store[,,s],V.bar, A.posterior[,,s])
+  a.posterior          = rnorm(1, a_posterior, sqrt(sbar2))
+  a.posterior.store[s] = a.posterior
   
-    # Update progress bar
-    setTxtProgressBar(pb, s)
-    }
+  # normal-inverse Wishart posterior parameters
+  V.bar.inv   = t(X)%*%X + diag(1/diag(priors$V.prior))
+  V.bar       = solve(V.bar.inv)
+  A.bar       = V.bar%*%(t(X)%*%Y + diag(1/diag(priors$V.prior))%*%priors$A.prior*a.posterior)
+  nu.bar      = nrow(Y) + priors$nu.prior
+  S.bar       = priors$S.prior + t(Y)%*%Y + t(priors$A.prior*a.posterior)%*%diag(1/diag(priors$V.prior))%*%priors$A.prior*a.posterior - t(A.bar)%*%V.bar.inv%*%A.bar
+  S.bar.inv   = solve(S.bar)
   
-  close(pb)
-    
+  #posterior draws
+  Sigma.posterior              = rWishart(1, df=nu.bar, Sigma=S.bar.inv)
+  Sigma.posterior              = apply(Sigma.posterior,3,solve)
+  Sigma.posterior              = array(Sigma.posterior,c(N,N,1))
+  Sigma.posterior.store[,,s]   = solve(Sigma.posterior)
+  
+  A.posterior       = matrix(mvtnorm::rmvnorm(1, mean=as.vector(A.bar), sigma=Sigma.posterior.store[,,s]%x%V.bar), ncol=N)
+  L                 = t(chol(V.bar))
+  A.posterior[,,s]  = A.bar + L%*%A.posterior[,,s]%*%chol(Sigma.posterior[,,s])
+
+  }
   posterior = list(
     Sigma.posterior   = Sigma.posterior,
     A.posterior       = A.posterior
@@ -371,56 +368,11 @@ BVAR.extension = function(Y,X,priors,S){
   return(posterior)
 }
 
+
 # Applying BVAR function
 posterior.draws.extension = BVAR.extension(Y=Y, X=X, priors=priors, S=S)
 round(apply(posterior.draws.extension$Sigma.posterior, 1:2, mean),3)
 round(apply(posterior.draws.extension$A.posterior, 1:2, mean),3)
-
-par(mfrow=c(2,2))
-hist(posterior.draws.extension$Sigma.posterior[2,1,1:sum(S)], col="#379683", xlab="Value of Sigma", ylab="Frequency", main ="Histogram of draws of Sigma")
-plot.ts(posterior.draws.extension$Sigma.posterior[2,1,1:sum(S)],col="#379683", xlab="Iteration s", ylab=NULL, main="Plot of posterior draws of sigma")
-hist(posterior.draws.extension$Sigma.posterior[1,1,1:sum(S)], col="#379683", xlab="Value of A", ylab="Frequency", main="Histogram of draws of A")
-plot.ts(posterior.draws.extension$Sigma.posterior[1,1,1:sum(S)],col="#379683", xlab="Iteration s", ylab=NULL, main="Plot of posterior draws of A")
-
-
-## Showing extended model
-#Specifications
-p = 1
-N = 2
-K = 1+N*p
-S = 1000
-
-# generate random walk processes
-rw.1    = cumsum(rnorm(1000,0,1))
-rw.2    = cumsum(rnorm(1000,0,1))
-y       = matrix(cbind(rw.1,rw.2),nrow=1000,ncol=N)
-
-# Set X and Y matrices
-Y       = ts(y[2:nrow(y),])
-X       = matrix(1,nrow(Y),1)
-X       = cbind(X,y[1:nrow(y)-p,])
-
-# MLE
-A.hat       = solve(t(X)%*%X)%*%t(X)%*%Y
-Sigma.hat   = t(Y-X%*%A.hat)%*%(Y-X%*%A.hat)/nrow(Y)
-
-# Minnesota prior
-kappa.1           = 0.02^2
-kappa.2           = 100
-A.prior           = matrix(0,nrow(A.hat),ncol(A.hat))
-A.prior[2:(N+1),] = diag(N)
-
-priors = list(
-  A.prior     = A.prior,
-  V.prior     = diag(c(kappa.2,kappa.1*((1:p)^(-2))%x%rep(1,N))),
-  S.prior     = diag(diag(Sigma.hat)),
-  nu.prior    = N+1
-)
-
-# Demonstration
-posterior.draws.extension.sim = BVAR.extension(Y=Y, X=X, priors=priors, S=S)
-round(apply(posterior.draws.extension.sim$Sigma.posterior, 1:2, mean),3)
-round(apply(posterior.draws.extension.sim$A.posterior, 1:2, mean),3)
 
 
 
@@ -509,7 +461,7 @@ N = ncol(Data[ , -1])
 p = 12
 K = 1+N*p
 S = 10000
-h = 36
+h = 24
 set.seed(1)
 
 # Initializing X and Y matrices
@@ -616,12 +568,11 @@ round(apply(posterior.draws.SV$Sigma.posterior, 1:2, mean),3)
 round(apply(posterior.draws.SV$A.posterior, 1:2, mean),3)
 round(apply(posterior.draws.SV$Sigma2.posterior, 1, mean),3)
 
-
 ### Baseline model forecast
 
 # simulate draws from the predictive density
-h = 36 # 3 year ahead forecast
-S = 10000
+h = 24 # 2 year ahead forecast
+S = 5000
 Y.h         = array(NA,c(h,N,S))
 
 # sampling predictive density
@@ -660,11 +611,12 @@ polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1
         c(y[230,1],gdp.interval.f[1,],gdp.interval.f[2,24:1],y[230,1]),
         col=shade, border=blue)
 
+
 ### Extended model forecast
 
 # simulate draws from the predictive density
-h = 36 # 3 year ahead forecast
-S = 1000
+h = 24 # 2 year ahead forecast
+S = 5000
 Y.h         = array(NA,c(h,N,S))
 
 # sampling predictive density
@@ -707,9 +659,10 @@ polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1
 
 ### SV model forecast
 # simulate draws from the predictive density
-h = 36 # 3 year ahead forecast
-S = 10000
+h = 24 # 3 year ahead forecast
+S = 5000
 Y.h         = array(NA,c(h,N,S))
+
 
 # sampling predictive density
 for (s in 1:S){
@@ -748,174 +701,3 @@ polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1
         c(y[230,1],gdp.interval.f[1,],gdp.interval.f[2,24:1],y[230,1]),
         col=shade, border=blue)
 
-
-### No Financial Variable models
-
-## No financial variable baseline model
-# Setting specifications
-N = ncol(Data[ , -c(1,3)])
-p = 12
-K = 1+N*p
-S = 10000
-set.seed(1)
-
-# Initializing X and Y matrices
-y       = ts(Data[ , -c(1,3)], start=c(2003,1), frequency=12)
-Y       = ts(y[13:nrow(y),], start=c(2004,1), frequency=12)
-X       = matrix(1,nrow(Y),1)
-for (i in 1:p){
-  X     = cbind(X,y[13:nrow(y)-i,])
-}
-
-# Maximum Likelihood Estimator
-A.hat       = solve(t(X)%*%X)%*%t(X)%*%Y
-Sigma.hat   = t(Y-X%*%A.hat)%*%(Y-X%*%A.hat)/T
-
-# Setting Minnesota Prior
-kappa.1           = 0.02^2
-kappa.2           = 100
-A.prior           = matrix(0,nrow(A.hat),ncol(A.hat))
-A.prior[2:(N+1),] = diag(N)
-
-priors = list(
-  A.prior     = A.prior,
-  V.prior     = diag(c(kappa.2,kappa.1*((1:p)^(-2))%x%rep(1,N))),
-  S.prior     = diag(diag(Sigma.hat)),
-  nu.prior    = N+1 
-)
-
-# Applying BVAR function
-posterior.draws.no_finance = BVAR(Y=Y, X=X, priors=priors, S=S)
-
-# simulate draws from the predictive density
-h = 36 # 3 year ahead forecast
-S = 10000
-Y.h         = array(NA,c(h,N,S))
-
-# sampling predictive density
-for (s in 1:S){
-  x.Ti        = Y[(nrow(Y)-h+1):nrow(Y),]
-  x.Ti        = x.Ti[p:1,]
-  for (i in 1:h){
-    x.T         = c(1,as.vector(t(x.Ti)))
-    Y.h[i,,s]   = rmvnorm(1, mean = x.T%*%posterior.draws.no_finance$A.posterior[,,s], sigma=posterior.draws.no_finance$Sigma.posterior[,,s])
-    x.Ti        = rbind(Y.h[i,,s],x.Ti[1:(p-1),])
-  }
-}
-
-gdp.point.f    = apply(Y.h[,1,],1,mean) 
-gdp.interval.f = apply(Y.h[,1,],1,hdi,credMass=0.68)
-gdp.range      = range(y[,1],gdp.interval.f)
-
-blue      = "#05386B"
-green     = "#379683"
-green.rgb = col2rgb(green)
-shade     = rgb(green.rgb[1],green.rgb[2],green.rgb[3], alpha=120, maxColorValue=255)
-
-
-par(mfrow=c(1,1), mar=rep(3,4),cex.axis=1.5)
-plot(1:(length(y[,1])+h),c(y[,1],gdp.point.f), type="l", ylim=gdp.range, axes=FALSE, xlab="", ylab="", lwd=2, col=green)
-axis(1,c(1,61,205, nrow(y),nrow(y)+h),c("2003-01","2008-01","2020-01","2023-12",""), col=blue)
-axis(2,c(gdp.range[1],mean(gdp.range),gdp.range[2]),c("","GDP",""), col=blue)
-abline(v=nrow(y), col="black")
-text(x=253, y=4.8, srt=90, "2024-01")
-abline(v=nrow(y)+12, col="black")
-text(x=265, y=4.8, srt=90, "2025-01")
-abline(v=nrow(y)+24, col="black")
-text(x=277, y=4.8, srt=90, "2026-01")
-polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1]),
-        c(y[230,1],gdp.interval.f[1,],gdp.interval.f[2,24:1],y[230,1]),
-        col=shade, border=blue)
-
-
-
-## No financial variable SV model
-# Setting specifications
-N = ncol(Data[ , -c(1,3)])
-p = 12
-K = 1+N*p
-S = 10000
-set.seed(1)
-
-# Initializing X and Y matrices
-y       = ts(Data[ , -c(1,3)], start=c(2003,1), frequency=12)
-Y       = ts(y[13:nrow(y),], start=c(2004,1), frequency=12)
-T       = nrow(Y)
-X       = matrix(1,nrow(Y),1)
-for (i in 1:p){
-  X     = cbind(X,y[13:nrow(y)-i,])
-}
-
-# Maximum Likelihood Estimator
-A.hat       = solve(t(X)%*%X)%*%t(X)%*%Y
-Sigma.hat   = t(Y-X%*%A.hat)%*%(Y-X%*%A.hat)/T
-
-# Setting Minnesota Prior
-kappa.1           = 0.02^2
-kappa.2           = 100
-A.prior           = matrix(0,nrow(A.hat),ncol(A.hat))
-A.prior[2:(N+1),] = diag(N)
-H                 = diag(T)
-sdiag(H,-1)       = -1
-HH                = 2*diag(T)
-sdiag(HH,-1)      = -1
-sdiag(HH,1)       = -1
-
-priors = list(
-  A.prior     = A.prior,
-  V.prior     = diag(c(kappa.2,kappa.1*((1:p)^(-2))%x%rep(1,N))),
-  S.prior     = diag(diag(Sigma.hat)),
-  nu.prior    = N+1,
-  
-  # New priors based on lectures
-  h0.v        = 1,
-  h0.m        = 0,
-  sigmav.s    = 1,
-  sigmav.nu   = 1, 
-  HH          = HH 
-)
-
-
-# Applying BVAR function
-posterior.draws.SV.no_finance = BVAR.SV(Y=Y, X=X, priors=priors, S=S)
-
-h = 36 # 3 year ahead forecast
-S = 10000
-Y.h         = array(NA,c(h,N,S))
-
-# sampling predictive density
-for (s in 1:S){
-  x.Ti        = Y[(nrow(Y)-h+1):nrow(Y),]
-  x.Ti        = x.Ti[p:1,]
-  for (i in 1:h){
-    x.T         = c(1,as.vector(t(x.Ti)))
-    Y.h[i,,s]   = rmvnorm(1, mean = x.T%*%posterior.draws.SV.no_finance$A.posterior[,,s], sigma=posterior.draws.SV.no_finance$Sigma.posterior[,,s])
-    x.Ti        = rbind(Y.h[i,,s],x.Ti[1:(p-1),])
-  }
-  
-}
-
-
-gdp.point.f    = apply(Y.h[,1,],1,mean) 
-gdp.interval.f = apply(Y.h[,1,],1,hdi,credMass=0.68)
-gdp.range      = range(y[,1],gdp.interval.f)
-
-blue      = "#05386B"
-green     = "#379683"
-green.rgb = col2rgb(green)
-shade     = rgb(green.rgb[1],green.rgb[2],green.rgb[3], alpha=120, maxColorValue=255)
-
-
-par(mfrow=c(1,1), mar=rep(3,4),cex.axis=1.5)
-plot(1:(length(y[,1])+h),c(y[,1],gdp.point.f), type="l", ylim=gdp.range, axes=FALSE, xlab="", ylab="", lwd=2, col=green)
-axis(1,c(1,61,205, nrow(y),nrow(y)+h),c("2003-01","2008-01","2020-01","2023-12",""), col=blue)
-axis(2,c(gdp.range[1],mean(gdp.range),gdp.range[2]),c("","GDP",""), col=blue)
-abline(v=nrow(y), col="black")
-text(x=253, y=4.8, srt=90, "2024-01")
-abline(v=nrow(y)+12, col="black")
-text(x=265, y=4.8, srt=90, "2025-01")
-abline(v=nrow(y)+24, col="black")
-text(x=277, y=4.8, srt=90, "2026-01")
-polygon(c(length(y[,1]):(length(y[,1])+h),(length(y[,1]):(length(y[,1])+h))[25:1]),
-        c(y[230,1],gdp.interval.f[1,],gdp.interval.f[2,24:1],y[230,1]),
-        col=shade, border=blue)
